@@ -1,23 +1,23 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'auth' })
+  definePageMeta({ layout: 'auth' })
 
-const toast = useToast()
+  const toast = useToast()
 
-const state = reactive({
-  email: '',
-  password: ''
-})
+  const state = reactive({
+    email: '',
+    password: ''
+  })
 
-const loading = ref(false)
+  const loading = ref(false)
 
-async function onSubmit() {
-  loading.value = true
-  await new Promise(resolve => setTimeout(resolve, 800))
-  loading.value = false
+  async function onSubmit() {
+    loading.value = true
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    loading.value = false
 
-  toast.add({ title: '登入成功', color: 'success' })
-  await navigateTo('/')
-}
+    toast.add({ title: '登入成功', color: 'success' })
+    await navigateTo('/')
+  }
 </script>
 
 <template>
@@ -31,13 +31,7 @@ async function onSubmit() {
 
     <UForm :state="state" class="flex flex-col gap-4" @submit="onSubmit">
       <UFormField label="電子郵件" name="email">
-        <UInput
-          v-model="state.email"
-          type="email"
-          placeholder="you@example.com"
-          autocomplete="email"
-          class="w-full"
-        />
+        <UInput v-model="state.email" type="email" placeholder="you@example.com" autocomplete="email" class="w-full" />
       </UFormField>
 
       <UFormField label="密碼" name="password">
@@ -50,9 +44,7 @@ async function onSubmit() {
         />
       </UFormField>
 
-      <UButton type="submit" class="w-full justify-center" :loading="loading">
-        登入
-      </UButton>
+      <UButton type="submit" class="w-full justify-center" :loading="loading"> 登入 </UButton>
     </UForm>
   </UCard>
 </template>
