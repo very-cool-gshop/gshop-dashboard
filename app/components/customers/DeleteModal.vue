@@ -19,15 +19,15 @@
 <template>
   <UModal
     v-model:open="open"
-    :title="`Delete ${count} customer${count > 1 ? 's' : ''}`"
-    :description="`Are you sure, this action cannot be undone.`"
+    :title="`刪除 ${count} 位客戶`"
+    :description="`確定要刪除嗎？此操作無法復原。`"
   >
     <slot />
 
     <template #body>
       <div class="flex justify-end gap-2">
-        <UButton label="Cancel" color="neutral" variant="subtle" @click="open = false" />
-        <UButton label="Delete" color="error" variant="solid" loading-auto @click="onSubmit" />
+        <UButton label="取消" color="neutral" variant="subtle" @click="open = false" />
+        <UButton label="刪除" color="error" variant="solid" loading-auto @click="onSubmit" />
       </div>
     </template>
   </UModal>

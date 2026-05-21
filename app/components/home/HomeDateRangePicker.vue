@@ -9,12 +9,12 @@
   const selected = defineModel<Range>({ required: true })
 
   const ranges = [
-    { label: 'Last 7 days', days: 7 },
-    { label: 'Last 14 days', days: 14 },
-    { label: 'Last 30 days', days: 30 },
-    { label: 'Last 3 months', months: 3 },
-    { label: 'Last 6 months', months: 6 },
-    { label: 'Last year', years: 1 }
+    { label: '最近 7 天', days: 7 },
+    { label: '最近 14 天', days: 14 },
+    { label: '最近 30 天', days: 30 },
+    { label: '最近 3 個月', months: 3 },
+    { label: '最近 6 個月', months: 6 },
+    { label: '最近 1 年', years: 1 }
   ]
 
   const toCalendarDate = (date: Date) => {
@@ -83,7 +83,7 @@
             {{ df.format(selected.start) }}
           </template>
         </template>
-        <template v-else> Pick a date </template>
+        <template v-else> 選擇日期 </template>
       </span>
 
       <template #trailing>

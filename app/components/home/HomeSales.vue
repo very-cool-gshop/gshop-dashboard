@@ -53,7 +53,7 @@
     },
     {
       accessorKey: 'date',
-      header: 'Date',
+      header: '日期',
       cell: ({ row }) => {
         return new Date(row.getValue('date')).toLocaleString('en-US', {
           day: 'numeric',
@@ -66,7 +66,7 @@
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: '狀態',
       cell: ({ row }) => {
         const color = {
           paid: 'success' as const,
@@ -83,7 +83,7 @@
     },
     {
       accessorKey: 'amount',
-      header: () => h('div', { class: 'text-right' }, 'Amount'),
+      header: () => h('div', { class: 'text-right' }, '金額'),
       cell: ({ row }) => {
         const amount = Number.parseFloat(row.getValue('amount'))
 

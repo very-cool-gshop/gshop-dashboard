@@ -24,8 +24,8 @@
   const toast = useToast()
   async function onSubmit(event: FormSubmitEvent<ProfileSchema>) {
     toast.add({
-      title: 'Success',
-      description: 'Your settings have been updated.',
+      title: '儲存成功',
+      description: '設定已更新。',
       icon: 'i-lucide-check',
       color: 'success'
     })
@@ -50,20 +50,20 @@
 <template>
   <UForm id="settings" :schema="profileSchema" :state="profile" @submit="onSubmit">
     <UPageCard
-      title="Profile"
-      description="These informations will be displayed publicly."
+      title="個人資料"
+      description="這些資訊將公開顯示。"
       variant="naked"
       orientation="horizontal"
       class="mb-4"
     >
-      <UButton form="settings" label="Save changes" color="neutral" type="submit" class="w-fit lg:ms-auto" />
+      <UButton form="settings" label="儲存變更" color="neutral" type="submit" class="w-fit lg:ms-auto" />
     </UPageCard>
 
     <UPageCard variant="subtle">
       <UFormField
         name="name"
-        label="Name"
-        description="Will appear on receipts, invoices, and other communication."
+        label="姓名"
+        description="將顯示在收據、發票及相關通知中。"
         required
         class="flex max-sm:flex-col justify-between items-start gap-4"
       >
@@ -73,7 +73,7 @@
       <UFormField
         name="email"
         label="Email"
-        description="Used to sign in, for email receipts and product updates."
+        description="用於登入、收取收據及產品更新通知。"
         required
         class="flex max-sm:flex-col justify-between items-start gap-4"
       >
@@ -82,8 +82,8 @@
       <USeparator />
       <UFormField
         name="username"
-        label="Username"
-        description="Your unique username for logging in and your profile URL."
+        label="使用者名稱"
+        description="用於登入及個人頁面網址的唯一名稱。"
         required
         class="flex max-sm:flex-col justify-between items-start gap-4"
       >
@@ -92,21 +92,21 @@
       <USeparator />
       <UFormField
         name="avatar"
-        label="Avatar"
-        description="JPG, GIF or PNG. 1MB Max."
+        label="頭像"
+        description="JPG、GIF 或 PNG，最大 1MB。"
         class="flex max-sm:flex-col justify-between sm:items-center gap-4"
       >
         <div class="flex flex-wrap items-center gap-3">
           <UAvatar :src="profile.avatar" :alt="profile.name" size="lg" />
-          <UButton label="Choose" color="neutral" @click="onFileClick" />
+          <UButton label="選擇圖片" color="neutral" @click="onFileClick" />
           <input ref="fileRef" type="file" class="hidden" accept=".jpg, .jpeg, .png, .gif" @change="onFileChange" />
         </div>
       </UFormField>
       <USeparator />
       <UFormField
         name="bio"
-        label="Bio"
-        description="Brief description for your profile. URLs are hyperlinked."
+        label="個人簡介"
+        description="簡短介紹自己，支援超連結。"
         class="flex max-sm:flex-col justify-between items-start gap-4"
         :ui="{ container: 'w-full' }"
       >

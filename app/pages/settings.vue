@@ -4,30 +4,30 @@
   const links = [
     [
       {
-        label: 'General',
+        label: '一般',
         icon: 'i-lucide-user',
         to: '/settings',
         exact: true
       },
       {
-        label: 'Members',
+        label: '成員',
         icon: 'i-lucide-users',
         to: '/settings/members'
       },
       {
-        label: 'Notifications',
+        label: '通知',
         icon: 'i-lucide-bell',
         to: '/settings/notifications'
       },
       {
-        label: 'Security',
+        label: '安全性',
         icon: 'i-lucide-shield',
         to: '/settings/security'
       }
     ],
     [
       {
-        label: 'Documentation',
+        label: '說明文件',
         icon: 'i-lucide-book-open',
         to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
         target: '_blank'
@@ -39,7 +39,7 @@
 <template>
   <UDashboardPanel id="settings" :ui="{ body: 'lg:py-12' }">
     <template #header>
-      <UDashboardNavbar title="Settings">
+      <UDashboardNavbar title="設定">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>

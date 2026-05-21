@@ -11,21 +11,21 @@
   const dropdownItems = [
     [
       {
-        label: 'Mark as unread',
+        label: '標記為未讀',
         icon: 'i-lucide-check-circle'
       },
       {
-        label: 'Mark as important',
+        label: '標記為重要',
         icon: 'i-lucide-triangle-alert'
       }
     ],
     [
       {
-        label: 'Star thread',
+        label: '加入星號',
         icon: 'i-lucide-star'
       },
       {
-        label: 'Mute thread',
+        label: '靜音對話',
         icon: 'i-lucide-circle-pause'
       }
     ]
@@ -43,8 +43,8 @@
       reply.value = ''
 
       toast.add({
-        title: 'Email sent',
-        description: 'Your email has been sent successfully',
+        title: '郵件已送出',
+        description: '您的郵件已成功送出',
         icon: 'i-lucide-check-circle',
         color: 'success'
       })
@@ -62,11 +62,11 @@
       </template>
 
       <template #right>
-        <UTooltip text="Archive">
+        <UTooltip text="封存">
           <UButton icon="i-lucide-inbox" color="neutral" variant="ghost" />
         </UTooltip>
 
-        <UTooltip text="Reply">
+        <UTooltip text="回覆">
           <UButton icon="i-lucide-reply" color="neutral" variant="ghost" />
         </UTooltip>
 
@@ -106,7 +106,7 @@
         <template #header>
           <UIcon name="i-lucide-reply" class="size-5" />
 
-          <span class="text-sm truncate"> Reply to {{ mail.from.name }} ({{ mail.from.email }}) </span>
+          <span class="text-sm truncate"> 回覆給 {{ mail.from.name }} ({{ mail.from.email }}) </span>
         </template>
 
         <form @submit.prevent="onSubmit">
@@ -116,7 +116,7 @@
             variant="none"
             required
             autoresize
-            placeholder="Write your reply..."
+            placeholder="輸入回覆內容..."
             :rows="4"
             :disabled="loading"
             class="w-full"
@@ -124,13 +124,13 @@
           />
 
           <div class="flex items-center justify-between">
-            <UTooltip text="Attach file">
+            <UTooltip text="附加檔案">
               <UButton color="neutral" variant="ghost" icon="i-lucide-paperclip" />
             </UTooltip>
 
             <div class="flex items-center justify-end gap-2">
-              <UButton color="neutral" variant="ghost" label="Save draft" />
-              <UButton type="submit" color="neutral" :loading="loading" label="Send" icon="i-lucide-send" />
+              <UButton color="neutral" variant="ghost" label="儲存草稿" />
+              <UButton type="submit" color="neutral" :loading="loading" label="送出" icon="i-lucide-send" />
             </div>
           </div>
         </form>

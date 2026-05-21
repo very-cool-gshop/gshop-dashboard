@@ -16,7 +16,7 @@
 
   const baseStats = [
     {
-      title: 'Customers',
+      title: '客戶數',
       icon: 'i-lucide-users',
       minValue: 400,
       maxValue: 1000,
@@ -24,7 +24,7 @@
       maxVariation: 25
     },
     {
-      title: 'Conversions',
+      title: '轉換數',
       icon: 'i-lucide-chart-pie',
       minValue: 1000,
       maxValue: 2000,
@@ -32,7 +32,7 @@
       maxVariation: 20
     },
     {
-      title: 'Revenue',
+      title: '營收',
       icon: 'i-lucide-circle-dollar-sign',
       minValue: 200000,
       maxValue: 500000,
@@ -41,7 +41,7 @@
       formatter: formatCurrency
     },
     {
-      title: 'Orders',
+      title: '訂單數',
       icon: 'i-lucide-shopping-cart',
       minValue: 100,
       maxValue: 300,

@@ -40,11 +40,11 @@
       })),
       [
         {
-          label: 'Create team',
+          label: '建立團隊',
           icon: 'i-lucide-circle-plus'
         },
         {
-          label: 'Manage teams',
+          label: '管理團隊',
           icon: 'i-lucide-cog'
         }
       ]

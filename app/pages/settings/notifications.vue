@@ -9,39 +9,39 @@
 
   const sections = [
     {
-      title: 'Notification channels',
-      description: 'Where can we notify you?',
+      title: '通知管道',
+      description: '您希望如何接收通知？',
       fields: [
         {
           name: 'email',
           label: 'Email',
-          description: 'Receive a daily email digest.'
+          description: '每日接收 Email 摘要通知。'
         },
         {
           name: 'desktop',
-          label: 'Desktop',
-          description: 'Receive desktop notifications.'
+          label: '桌面通知',
+          description: '接收桌面推播通知。'
         }
       ]
     },
     {
-      title: 'Account updates',
-      description: 'Receive updates about Nuxt UI.',
+      title: '帳號更新',
+      description: '接收產品相關通知。',
       fields: [
         {
           name: 'weekly_digest',
-          label: 'Weekly digest',
-          description: 'Receive a weekly digest of news.'
+          label: '每週摘要',
+          description: '每週接收一次新聞摘要。'
         },
         {
           name: 'product_updates',
-          label: 'Product updates',
-          description: 'Receive a monthly email with all new features and updates.'
+          label: '產品更新',
+          description: '每月接收新功能與更新通知。'
         },
         {
           name: 'important_updates',
-          label: 'Important updates',
-          description: 'Receive emails about important updates like security fixes, maintenance, etc.'
+          label: '重要更新',
+          description: '接收安全性修補、維護等重要通知。'
         }
       ]
     }

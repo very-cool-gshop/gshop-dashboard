@@ -5,11 +5,11 @@
 
   const tabItems = [
     {
-      label: 'All',
+      label: '全部',
       value: 'all'
     },
     {
-      label: 'Unread',
+      label: '未讀',
       value: 'unread'
     }
   ]
@@ -52,7 +52,7 @@
 
 <template>
   <UDashboardPanel id="inbox-1" :default-size="25" :min-size="20" :max-size="30" resizable>
-    <UDashboardNavbar title="Inbox">
+    <UDashboardNavbar title="收件匣">
       <template #leading>
         <UDashboardSidebarCollapse />
       </template>

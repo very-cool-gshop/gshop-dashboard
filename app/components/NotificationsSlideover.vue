@@ -8,7 +8,7 @@
 </script>
 
 <template>
-  <USlideover v-model:open="isNotificationsSlideoverOpen" title="Notifications">
+  <USlideover v-model:open="isNotificationsSlideoverOpen" title="通知">
     <template #body>
       <NuxtLink
         v-for="notification in notifications"

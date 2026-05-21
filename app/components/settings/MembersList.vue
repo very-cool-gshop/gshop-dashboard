@@ -8,11 +8,11 @@
 
   const items = [
     {
-      label: 'Edit member',
+      label: '編輯成員',
       onSelect: () => console.log('Edit member')
     },
     {
-      label: 'Remove member',
+      label: '移除成員',
       color: 'error' as const,
       onSelect: () => console.log('Remove member')
     }

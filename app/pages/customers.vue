@@ -31,16 +31,16 @@
     return [
       {
         type: 'label',
-        label: 'Actions'
+        label: '操作'
       },
       {
-        label: 'Copy customer ID',
+        label: '複製客戶 ID',
         icon: 'i-lucide-copy',
         onSelect() {
           navigator.clipboard.writeText(row.original.id.toString())
           toast.add({
-            title: 'Copied to clipboard',
-            description: 'Customer ID copied to clipboard'
+            title: '已複製到剪貼簿',
+            description: '客戶 ID 已複製到剪貼簿'
           })
         }
       },
@@ -48,24 +48,24 @@
         type: 'separator'
       },
       {
-        label: 'View customer details',
+        label: '查看客戶詳情',
         icon: 'i-lucide-list'
       },
       {
-        label: 'View customer payments',
+        label: '查看付款記錄',
         icon: 'i-lucide-wallet'
       },
       {
         type: 'separator'
       },
       {
-        label: 'Delete customer',
+        label: '刪除客戶',
         icon: 'i-lucide-trash',
         color: 'error',
         onSelect() {
           toast.add({
-            title: 'Customer deleted',
-            description: 'The customer has been deleted.'
+            title: '客戶已刪除',
+            description: '該客戶已被成功刪除。'
           })
         }
       }
@@ -209,7 +209,7 @@
 <template>
   <UDashboardPanel id="customers">
     <template #header>
-      <UDashboardNavbar title="Customers">
+      <UDashboardNavbar title="客戶管理">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -222,13 +222,13 @@
 
     <template #body>
       <div class="flex flex-wrap items-center justify-between gap-1.5">
-        <UInput v-model="email" class="max-w-sm" icon="i-lucide-search" placeholder="Filter emails..." />
+        <UInput v-model="email" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋 Email..." />
 
         <div class="flex flex-wrap items-center gap-1.5">
           <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length">
             <UButton
               v-if="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
-              label="Delete"
+              label="刪除"
               color="error"
               variant="subtle"
               icon="i-lucide-trash"
@@ -244,13 +244,13 @@
           <USelect
             v-model="statusFilter"
             :items="[
-              { label: 'All', value: 'all' },
-              { label: 'Subscribed', value: 'subscribed' },
-              { label: 'Unsubscribed', value: 'unsubscribed' },
-              { label: 'Bounced', value: 'bounced' }
+              { label: '全部', value: 'all' },
+              { label: '已訂閱', value: 'subscribed' },
+              { label: '未訂閱', value: 'unsubscribed' },
+              { label: '已退信', value: 'bounced' }
             ]"
             :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="Filter status"
+            placeholder="篩選狀態"
             class="min-w-28"
           />
           <UDropdownMenu
@@ -272,7 +272,7 @@
             "
             :content="{ align: 'end' }"
           >
-            <UButton label="Display" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
+            <UButton label="顯示" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
           </UDropdownMenu>
         </div>
       </div>

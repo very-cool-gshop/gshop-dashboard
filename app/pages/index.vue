@@ -8,12 +8,12 @@
   const items = [
     [
       {
-        label: 'New mail',
+        label: '新增郵件',
         icon: 'i-lucide-send',
         to: '/inbox'
       },
       {
-        label: 'New customer',
+        label: '新增客戶',
         icon: 'i-lucide-user-plus',
         to: '/customers'
       }
@@ -30,13 +30,13 @@
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="Home" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="首頁" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
-          <UTooltip text="Notifications" :shortcuts="['N']">
+          <UTooltip text="通知" :shortcuts="['N']">
             <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
               <UChip color="error" inset>
                 <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
