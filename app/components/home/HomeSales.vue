@@ -68,18 +68,25 @@
       accessorKey: 'status',
       header: '狀態',
       cell: ({ row }) => {
+        const status = row.getValue('status') as string
         const color = {
           paid: 'success' as const,
           failed: 'error' as const,
           refunded: 'neutral' as const
-        }[row.getValue('status') as string]
+        }[status]
 
-        return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () => row.getValue('status'))
+        const label = {
+          paid: '已付款',
+          failed: '失敗',
+          refunded: '已退款'
+        }[status] ?? status
+
+        return h(UBadge, { variant: 'subtle', color }, () => label)
       }
     },
     {
       accessorKey: 'email',
-      header: 'Email'
+      header: '信箱'
     },
     {
       accessorKey: 'amount',
