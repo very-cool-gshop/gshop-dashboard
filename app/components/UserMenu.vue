@@ -199,7 +199,8 @@
       },
       {
         label: 'Log out',
-        icon: 'i-lucide-log-out'
+        icon: 'i-lucide-log-out',
+        onSelect: () => navigateTo('/login')
       }
     ]
   ])
