@@ -34,6 +34,22 @@
         }
       },
       {
+        label: '商品管理',
+        icon: 'i-lucide-package',
+        to: '/products',
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
+        label: '訂單管理',
+        icon: 'i-lucide-shopping-bag',
+        to: '/orders',
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
         label: 'Settings',
         to: '/settings',
         icon: 'i-lucide-settings',

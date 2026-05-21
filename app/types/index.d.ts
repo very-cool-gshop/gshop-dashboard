@@ -52,6 +52,36 @@ export interface Notification {
   date: string
 }
 
+export type ProductStatus = 'active' | 'draft' | 'archived'
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+
+export interface Product {
+  id: number
+  name: string
+  category: string
+  price: number
+  stock: number
+  status: ProductStatus
+  image: string
+}
+
+export interface OrderItem {
+  productId: number
+  productName: string
+  quantity: number
+  price: number
+}
+
+export interface Order {
+  id: string
+  customerName: string
+  customerEmail: string
+  status: OrderStatus
+  total: number
+  items: OrderItem[]
+  date: string
+}
+
 export type Period = 'daily' | 'weekly' | 'monthly'
 
 export interface Range {
