@@ -24,7 +24,7 @@
       maxVariation: 25
     },
     {
-      title: '轉換數',
+      title: '客單價',
       icon: 'i-lucide-chart-pie',
       minValue: 1000,
       maxValue: 2000,
