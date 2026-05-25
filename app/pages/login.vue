@@ -1,25 +1,3 @@
-<script setup lang="ts">
-  definePageMeta({ layout: 'auth' })
-
-  const toast = useToast()
-
-  const state = reactive({
-    email: '',
-    password: ''
-  })
-
-  const loading = ref(false)
-
-  async function onSubmit() {
-    loading.value = true
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    loading.value = false
-
-    toast.add({ title: '登入成功', color: 'success' })
-    await navigateTo('/')
-  }
-</script>
-
 <template>
   <UCard class="w-full max-w-sm mb-5">
     <template #header>
@@ -44,7 +22,35 @@
         />
       </UFormField>
 
-      <UButton type="submit" class="w-full justify-center" :loading="loading"> 登入 </UButton>
+      <UButton type="submit" class="w-full justify-center mt-4" :loading="loading"> 登入 </UButton>
     </UForm>
   </UCard>
 </template>
+
+<script setup lang="ts">
+  definePageMeta({ layout: 'auth' })
+
+  const toast = useToast()
+  const { login } = useAuth()
+
+  const state = reactive({
+    email: '',
+    password: ''
+  })
+
+  const loading = ref(false)
+
+  async function onSubmit() {
+    loading.value = true
+    try {
+      await login(state.email, state.password)
+      toast.add({ title: '登入成功', color: 'success' })
+      await navigateTo('/')
+    } catch (error: any) {
+      const message = error?.data?.message || '登入失敗'
+      toast.add({ title: '登入失敗', description: message, color: 'error' })
+    } finally {
+      loading.value = false
+    }
+  }
+</script>
