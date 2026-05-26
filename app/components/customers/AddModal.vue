@@ -1,3 +1,24 @@
+<template>
+  <UModal v-model:open="open" title="新增客戶" description="將新客戶加入資料庫">
+    <UButton label="新增客戶" icon="i-lucide-plus" />
+
+    <template #body>
+      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+        <UFormField label="姓名" placeholder="王小明" name="name">
+          <UInput v-model="state.name" class="w-full" />
+        </UFormField>
+        <UFormField label="Email" placeholder="example@email.com" name="email">
+          <UInput v-model="state.email" class="w-full" />
+        </UFormField>
+        <div class="flex justify-end gap-2">
+          <UButton label="取消" color="neutral" variant="subtle" @click="open = false" />
+          <UButton label="建立" color="primary" variant="solid" type="submit" />
+        </div>
+      </UForm>
+    </template>
+  </UModal>
+</template>
+
 <script setup lang="ts">
   import * as z from 'zod'
   import type { FormSubmitEvent } from '@nuxt/ui'
@@ -21,24 +42,3 @@
     open.value = false
   }
 </script>
-
-<template>
-  <UModal v-model:open="open" title="新增客戶" description="將新客戶加入資料庫">
-    <UButton label="新增客戶" icon="i-lucide-plus" />
-
-    <template #body>
-      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-        <UFormField label="姓名" placeholder="王小明" name="name">
-          <UInput v-model="state.name" class="w-full" />
-        </UFormField>
-        <UFormField label="Email" placeholder="example@email.com" name="email">
-          <UInput v-model="state.email" class="w-full" />
-        </UFormField>
-        <div class="flex justify-end gap-2">
-          <UButton label="取消" color="neutral" variant="subtle" @click="open = false" />
-          <UButton label="建立" color="primary" variant="solid" type="submit" />
-        </div>
-      </UForm>
-    </template>
-  </UModal>
-</template>
