@@ -7,7 +7,7 @@
         </template>
         <template #right>
           <UButton label="取消" color="neutral" variant="ghost" to="/products" />
-          <UButton label="建立商品" icon="i-lucide-check" type="submit" form="product-form" />
+          <UButton label="建立商品" icon="i-lucide-check" type="submit" form="product-form" :loading="loading" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -18,19 +18,23 @@
           <UInput v-model="state.name" placeholder="例：經典白 T-shirt" class="w-full" />
         </UFormField>
 
-        <UFormField label="分類" name="category">
-          <UInput v-model="state.category" placeholder="例：上衣" class="w-full" />
+        <UFormField label="分類" name="categoryId">
+          <USelect
+            v-model="state.categoryId"
+            :items="categoryOptions"
+            placeholder="請選擇分類"
+            :loading="categoriesLoading"
+            class="w-full"
+          />
         </UFormField>
 
-        <div class="grid grid-cols-2 gap-4">
-          <UFormField label="售價 (NT$)" name="price">
-            <UInput v-model.number="state.price" type="number" placeholder="0" class="w-full" />
-          </UFormField>
+        <UFormField label="商品描述" name="description">
+          <UTextarea v-model="state.description" placeholder="描述商品特色、材質、尺寸等..." :rows="3" class="w-full" />
+        </UFormField>
 
-          <UFormField label="庫存" name="stock">
-            <UInput v-model.number="state.stock" type="number" placeholder="0" class="w-full" />
-          </UFormField>
-        </div>
+        <UFormField label="售價 (NT$)" name="price">
+          <UInput v-model.number="state.price" type="number" placeholder="0" class="w-full" />
+        </UFormField>
 
         <UFormField label="狀態" name="status">
           <USelect
@@ -66,22 +70,6 @@
             </div>
           </div>
         </UFormField>
-
-        <UDivider label="規格" />
-
-        <div class="space-y-3">
-          <div
-            v-for="(spec, index) in state.specs"
-            :key="index"
-            class="flex items-center gap-2"
-          >
-            <UInput v-model="spec.name" placeholder="規格名稱（例：尺寸）" class="w-1/3" />
-            <UInput v-model="spec.value" placeholder="規格值（例：L）" class="flex-1" />
-            <UButton icon="i-lucide-trash-2" color="error" variant="ghost" @click="removeSpec(index)" />
-          </div>
-
-          <UButton label="新增規格" icon="i-lucide-plus" color="neutral" variant="outline" size="sm" @click="addSpec" />
-        </div>
       </UForm>
     </template>
   </UDashboardPanel>
@@ -93,28 +81,25 @@
 
   const schema = z.object({
     name: z.string().min(1, '請輸入商品名稱'),
-    category: z.string().min(1, '請輸入分類'),
+    categoryId: z.number({ error: '請選擇種類' }).int().positive('請輸入有效的分類 ID'),
+    description: z.string().optional(),
     price: z.number({ error: '請輸入售價' }).positive('售價需大於 0'),
-    stock: z.number({ error: '請輸入庫存' }).int().min(0, '庫存不可為負數'),
-    status: z.enum(['active', 'draft', 'archived']),
-    image: z.string().optional(),
-    specs: z.array(z.object({ name: z.string(), value: z.string() }))
+    status: z.enum(['active', 'draft', 'archived'])
   })
 
   type Schema = z.output<typeof schema>
 
   const state = reactive<Partial<Schema>>({
     name: '',
-    category: '',
+    categoryId: undefined,
+    description: '',
     price: undefined,
-    stock: undefined,
-    status: 'draft',
-    image: '',
-    specs: []
+    status: 'draft'
   })
 
   const fileInputRef = ref<HTMLInputElement | null>(null)
   const imagePreview = ref<string | null>(null)
+  const imageFile = ref<File | null>(null)
 
   function onFileChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0]
@@ -127,32 +112,63 @@
   }
 
   function loadPreview(file: File) {
+    imageFile.value = file
     const reader = new FileReader()
-    reader.onload = (e) => {
-      imagePreview.value = e.target?.result as string
-      state.image = imagePreview.value
-    }
+    reader.onload = (e) => { imagePreview.value = e.target?.result as string }
     reader.readAsDataURL(file)
   }
 
   function removeImage() {
     imagePreview.value = null
-    state.image = ''
+    imageFile.value = null
     if (fileInputRef.value) fileInputRef.value.value = ''
   }
 
-  function addSpec() {
-    state.specs!.push({ name: '', value: '' })
+  interface Category {
+    id: number
+    name: string
+    children?: Category[]
   }
 
-  function removeSpec(index: number) {
-    state.specs!.splice(index, 1)
-  }
+  const apiFetch = useApiFetch()
+
+  const categoriesLoading = ref(false)
+  const categoryOptions = ref<{ label: string; value: number }[]>([])
+
+  onMounted(async () => {
+    categoriesLoading.value = true
+    try {
+      const data = await apiFetch<Category[]>('/categories')
+      categoryOptions.value = data.flatMap(cat => [
+        { label: cat.name, value: cat.id },
+        ...(cat.children ?? []).map(child => ({ label: `　${child.name}`, value: child.id }))
+      ])
+    } finally {
+      categoriesLoading.value = false
+    }
+  })
 
   const toast = useToast()
+  const loading = ref(false)
 
   async function onSubmit(event: FormSubmitEvent<Schema>) {
-    toast.add({ title: '新增成功', description: `商品「${event.data.name}」已建立`, color: 'success' })
-    await navigateTo('/products')
+    loading.value = true
+    try {
+      const fd = new FormData()
+      fd.append('name', event.data.name)
+      fd.append('categoryId', String(event.data.categoryId))
+      fd.append('description', event.data.description ?? '')
+      fd.append('price', String(event.data.price))
+      fd.append('status', event.data.status)
+      if (imageFile.value) fd.append('image', imageFile.value)
+
+      await apiFetch('/products', { method: 'POST', body: fd })
+      toast.add({ title: '新增成功', description: `商品「${event.data.name}」已建立`, color: 'success' })
+      await navigateTo('/products')
+    } catch {
+      toast.add({ title: '新增失敗', description: '請稍後再試', color: 'error' })
+    } finally {
+      loading.value = false
+    }
   }
 </script>
