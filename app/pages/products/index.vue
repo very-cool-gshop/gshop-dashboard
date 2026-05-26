@@ -6,7 +6,7 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <ProductsAddModal />
+          <UButton icon="i-lucide-plus" label="新增商品" to="/products/new" />
         </template>
       </UDashboardNavbar>
     </template>
