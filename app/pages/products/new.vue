@@ -44,8 +44,27 @@
           />
         </UFormField>
 
-        <UFormField label="圖片網址" name="image">
-          <UInput v-model="state.image" placeholder="https://..." class="w-full" />
+        <UFormField label="商品圖片" name="image">
+          <div class="space-y-3">
+            <div
+              class="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
+              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented) bg-transparent'"
+              @click="fileInputRef?.click()"
+              @dragover.prevent
+              @drop.prevent="onDrop"
+            >
+              <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-contain rounded-lg" />
+              <div v-else class="flex flex-col items-center gap-2 text-gray-400 select-none">
+                <UIcon name="i-lucide-image-plus" class="w-10 h-10" />
+                <span class="text-sm">點擊或拖曳圖片至此上傳</span>
+              </div>
+            </div>
+            <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+            <div v-if="imagePreview" class="flex gap-2">
+              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" @click="fileInputRef?.click()" />
+              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" @click="removeImage" />
+            </div>
+          </div>
         </UFormField>
 
         <UDivider label="規格" />
@@ -93,6 +112,34 @@
     image: '',
     specs: []
   })
+
+  const fileInputRef = ref<HTMLInputElement | null>(null)
+  const imagePreview = ref<string | null>(null)
+
+  function onFileChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) loadPreview(file)
+  }
+
+  function onDrop(event: DragEvent) {
+    const file = event.dataTransfer?.files?.[0]
+    if (file && file.type.startsWith('image/')) loadPreview(file)
+  }
+
+  function loadPreview(file: File) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target?.result as string
+      state.image = imagePreview.value
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function removeImage() {
+    imagePreview.value = null
+    state.image = ''
+    if (fileInputRef.value) fileInputRef.value.value = ''
+  }
 
   function addSpec() {
     state.specs!.push({ name: '', value: '' })
