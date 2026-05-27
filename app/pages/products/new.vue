@@ -1,5 +1,5 @@
 <template>
-  <UDashboardPanel id="products-new">
+  <UDashboardPanel id="products-new" :ui="{ body: 'sm:p-6 lg:py-8' }">
     <template #header>
       <UDashboardNavbar title="新增商品">
         <template #leading>
@@ -13,7 +13,8 @@
     </template>
 
     <template #body>
-      <UForm id="product-form" :schema="schema" :state="state" class="max-w-2xl space-y-6" @submit="onSubmit">
+      <div class="w-full max-w-3xl mx-auto">
+      <UForm id="product-form" :schema="schema" :state="state" class="space-y-6" @submit="onSubmit">
         <UFormField label="商品名稱" name="name">
           <UInput v-model="state.name" placeholder="例：經典白 T-shirt" class="w-full" />
         </UFormField>
@@ -70,7 +71,89 @@
             </div>
           </div>
         </UFormField>
+
+        <!-- 商品規格 -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-(--ui-text)">商品規格</p>
+              <p class="text-xs text-(--ui-text-muted)">可為同一商品設定多種尺寸、顏色等規格</p>
+            </div>
+            <UButton
+              label="新增規格"
+              icon="i-lucide-plus"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="addVariant"
+            />
+          </div>
+
+          <!-- 規格列表 -->
+          <div v-if="variants.length > 0" class="space-y-3">
+            <div
+              v-for="(variant, index) in variants"
+              :key="index"
+              class="grid grid-cols-[1fr_auto] gap-3 p-4 border rounded-lg border-(--ui-border) bg-(--ui-bg-elevated)/40"
+            >
+              <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                <UFormField label="規格名稱">
+                  <UInput
+                    v-model="variant.name"
+                    placeholder="例：S / 紅色"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UFormField label="售價 (NT$)">
+                  <UInput
+                    v-model.number="variant.price"
+                    type="number"
+                    placeholder="0"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UFormField label="庫存數量">
+                  <UInput
+                    v-model.number="variant.stock"
+                    type="number"
+                    placeholder="0"
+                    class="w-full"
+                  />
+                </UFormField>
+
+                <UFormField label="規格圖片網址（選填）">
+                  <UInput
+                    v-model="variant.imageUrl"
+                    placeholder="https://..."
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+
+              <div class="flex items-start pt-6">
+                <UButton
+                  icon="i-lucide-trash-2"
+                  color="error"
+                  variant="ghost"
+                  size="sm"
+                  @click="removeVariant(index)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="flex flex-col items-center gap-2 py-6 border border-dashed rounded-lg border-(--ui-border) text-(--ui-text-muted)"
+          >
+            <UIcon name="i-lucide-layers" class="w-7 h-7 opacity-40" />
+            <span class="text-sm">尚未新增任何規格</span>
+          </div>
+        </div>
       </UForm>
+      </div>
     </template>
   </UDashboardPanel>
 </template>
@@ -97,6 +180,7 @@
     status: 'draft'
   })
 
+  // ── 圖片 ──────────────────────────────────────────────
   const fileInputRef = ref<HTMLInputElement | null>(null)
   const imagePreview = ref<string | null>(null)
   const imageFile = ref<File | null>(null)
@@ -124,6 +208,25 @@
     if (fileInputRef.value) fileInputRef.value.value = ''
   }
 
+  // ── 規格 ──────────────────────────────────────────────
+  interface VariantDraft {
+    name: string
+    price: number | null
+    stock: number
+    imageUrl: string
+  }
+
+  const variants = ref<VariantDraft[]>([])
+
+  function addVariant() {
+    variants.value.push({ name: '', price: null, stock: 0, imageUrl: '' })
+  }
+
+  function removeVariant(index: number) {
+    variants.value.splice(index, 1)
+  }
+
+  // ── 分類 ──────────────────────────────────────────────
   interface Category {
     id: number
     name: string
@@ -131,7 +234,6 @@
   }
 
   const apiFetch = useApiFetch()
-
   const categoriesLoading = ref(false)
   const categoryOptions = ref<{ label: string; value: number }[]>([])
 
@@ -148,12 +250,14 @@
     }
   })
 
+  // ── 送出 ──────────────────────────────────────────────
   const toast = useToast()
   const loading = ref(false)
 
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     loading.value = true
     try {
+      // 1. 建立商品
       const fd = new FormData()
       fd.append('name', event.data.name)
       fd.append('categoryId', String(event.data.categoryId))
@@ -162,8 +266,31 @@
       fd.append('status', event.data.status)
       if (imageFile.value) fd.append('image', imageFile.value)
 
-      await apiFetch('/products', { method: 'POST', body: fd })
-      toast.add({ title: '新增成功', description: `商品「${event.data.name}」已建立`, color: 'success' })
+      const product = await apiFetch<{ id: number }>('/products', { method: 'POST', body: fd })
+
+      // 2. 批次建立規格（跳過名稱或售價未填的列）
+      const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
+      if (validVariants.length > 0) {
+        await Promise.all(
+          validVariants.map(v =>
+            apiFetch(`/products/${product.id}/variants`, {
+              method: 'POST',
+              body: {
+                name: v.name.trim(),
+                price: v.price,
+                stock: v.stock ?? 0,
+                ...(v.imageUrl.trim() ? { imageUrl: v.imageUrl.trim() } : {})
+              }
+            })
+          )
+        )
+      }
+
+      toast.add({
+        title: '新增成功',
+        description: `商品「${event.data.name}」已建立${validVariants.length > 0 ? `，共 ${validVariants.length} 筆規格` : ''}`,
+        color: 'success'
+      })
       await navigateTo('/products')
     } catch {
       toast.add({ title: '新增失敗', description: '請稍後再試', color: 'error' })
