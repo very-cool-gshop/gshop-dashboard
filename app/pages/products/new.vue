@@ -1,5 +1,5 @@
 <template>
-  <UDashboardPanel id="products-new" :ui="{ body: 'sm:p-6 lg:py-8' }">
+  <UDashboardPanel id="products-new" :ui="{ body: 'lg:py-12' }">
     <template #header>
       <UDashboardNavbar title="新增商品">
         <template #leading>
@@ -13,54 +13,85 @@
     </template>
 
     <template #body>
-      <div class="w-full max-w-3xl mx-auto">
-      <UForm id="product-form" :schema="schema" :state="state" class="space-y-6" @submit="onSubmit">
-        <UFormField label="商品名稱" name="name">
-          <UInput v-model="state.name" placeholder="例：經典白 T-shirt" class="w-full" />
-        </UFormField>
+      <UForm
+        id="product-form"
+        :schema="schema"
+        :state="state"
+        class="flex flex-col gap-4 sm:gap-6 lg:gap-8 w-full max-w-3xl mx-auto"
+        @submit="onSubmit"
+      >
+        <!-- ── 基本資料 ── -->
+        <UPageCard
+          title="基本資料"
+          description="商品名稱、分類、售價與上架狀態。"
+          variant="subtle"
+        >
+          <UFormField label="商品名稱" name="name" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <UInput v-model="state.name" placeholder="例：經典白 T-shirt" class="w-64" />
+          </UFormField>
 
-        <UFormField label="分類" name="categoryId">
-          <USelect
-            v-model="state.categoryId"
-            :items="categoryOptions"
-            placeholder="請選擇分類"
-            :loading="categoriesLoading"
-            class="w-full"
-          />
-        </UFormField>
+          <USeparator />
 
-        <UFormField label="商品描述" name="description">
-          <UTextarea v-model="state.description" placeholder="描述商品特色、材質、尺寸等..." :rows="3" class="w-full" />
-        </UFormField>
+          <UFormField label="分類" name="categoryId" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <USelect
+              v-model="state.categoryId"
+              :items="categoryOptions"
+              placeholder="請選擇分類"
+              :loading="categoriesLoading"
+              class="w-64"
+            />
+          </UFormField>
 
-        <UFormField label="售價 (NT$)" name="price">
-          <UInput v-model.number="state.price" type="number" placeholder="0" class="w-full" />
-        </UFormField>
+          <USeparator />
 
-        <UFormField label="狀態" name="status">
-          <USelect
-            v-model="state.status"
-            :items="[
-              { label: '草稿', value: 'draft' },
-              { label: '上架中', value: 'active' },
-              { label: '已下架', value: 'archived' }
-            ]"
-            class="w-full"
-          />
-        </UFormField>
+          <UFormField label="售價 (NT$)" name="price" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <UInput v-model.number="state.price" type="number" placeholder="0" class="w-64" />
+          </UFormField>
 
-        <UFormField label="商品圖片" name="image">
+          <USeparator />
+
+          <UFormField label="狀態" name="status" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <USelect
+              v-model="state.status"
+              :items="[
+                { label: '草稿', value: 'draft' },
+                { label: '上架中', value: 'active' },
+                { label: '已下架', value: 'archived' }
+              ]"
+              class="w-64"
+            />
+          </UFormField>
+
+          <USeparator />
+
+          <UFormField
+            label="商品描述"
+            name="description"
+            description="描述商品特色、材質、尺寸等。"
+            class="flex max-sm:flex-col justify-between items-start gap-4"
+            :ui="{ container: 'w-full' }"
+          >
+            <UTextarea v-model="state.description" placeholder="描述商品特色、材質、尺寸等..." :rows="3" class="w-full" />
+          </UFormField>
+        </UPageCard>
+
+        <!-- ── 商品圖片 ── -->
+        <UPageCard
+          title="商品圖片"
+          description="建議使用正方形圖片以獲得最佳呈現效果。"
+          variant="subtle"
+        >
           <div class="space-y-3">
             <div
-              class="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
-              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented) bg-transparent'"
+              class="flex items-center justify-center w-full h-52 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
+              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
               @click="fileInputRef?.click()"
               @dragover.prevent
               @drop.prevent="onDrop"
             >
               <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-contain rounded-lg" />
-              <div v-else class="flex flex-col items-center gap-2 text-gray-400 select-none">
-                <UIcon name="i-lucide-image-plus" class="w-10 h-10" />
+              <div v-else class="flex flex-col items-center gap-2 text-(--ui-text-muted) select-none">
+                <UIcon name="i-lucide-image-plus" class="w-10 h-10 opacity-50" />
                 <span class="text-sm">點擊或拖曳圖片至此上傳</span>
               </div>
             </div>
@@ -70,90 +101,76 @@
               <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" @click="removeImage" />
             </div>
           </div>
-        </UFormField>
+        </UPageCard>
 
-        <!-- 商品規格 -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-(--ui-text)">商品規格</p>
-              <p class="text-xs text-(--ui-text-muted)">可為同一商品設定多種尺寸、顏色等規格</p>
+        <!-- ── 商品規格 ── -->
+        <UPageCard variant="subtle">
+          <template #header>
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="font-semibold text-sm text-(--ui-text)">商品規格</p>
+              </div>
+              <UButton
+                label="新增規格"
+                icon="i-lucide-plus"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                @click="addVariant"
+              />
             </div>
-            <UButton
-              label="新增規格"
-              icon="i-lucide-plus"
-              color="neutral"
-              variant="outline"
-              size="sm"
-              @click="addVariant"
-            />
-          </div>
+          </template>
 
           <!-- 規格列表 -->
           <div v-if="variants.length > 0" class="space-y-3">
             <div
               v-for="(variant, index) in variants"
               :key="index"
-              class="grid grid-cols-[1fr_auto] gap-3 p-4 border rounded-lg border-(--ui-border) bg-(--ui-bg-elevated)/40"
+              class="grid grid-cols-[1fr_auto] gap-3 p-4 border rounded-lg border-(--ui-border) bg-(--ui-bg)/60"
             >
-              <div class="grid grid-cols-2 gap-x-4 gap-y-3">
-                <UFormField label="規格名稱">
-                  <UInput
-                    v-model="variant.name"
-                    placeholder="例：S / 紅色"
-                    class="w-full"
+              <div class="flex gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-sm font-medium text-(--ui-text)">圖片</span>
+                  <div
+                    class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors shrink-0"
+                    @click="variantFileRefs[index]?.click()"
+                  >
+                    <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                    <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
+                  </div>
+                  <input
+                    :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="onVariantFileChange($event, index)"
                   />
+                </div>
+                <UFormField label="規格名稱" class="flex-1">
+                  <UInput v-model="variant.name" placeholder="例：S / 紅色" class="w-full" />
                 </UFormField>
-
-                <UFormField label="售價 (NT$)">
-                  <UInput
-                    v-model.number="variant.price"
-                    type="number"
-                    placeholder="0"
-                    class="w-full"
-                  />
+                <UFormField label="售價 (NT$)" class="w-32">
+                  <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-full" />
                 </UFormField>
-
-                <UFormField label="庫存數量">
-                  <UInput
-                    v-model.number="variant.stock"
-                    type="number"
-                    placeholder="0"
-                    class="w-full"
-                  />
-                </UFormField>
-
-                <UFormField label="規格圖片網址（選填）">
-                  <UInput
-                    v-model="variant.imageUrl"
-                    placeholder="https://..."
-                    class="w-full"
-                  />
+                <UFormField label="庫存數量" class="w-28">
+                  <UInput v-model.number="variant.stock" type="number" placeholder="0" class="w-full" />
                 </UFormField>
               </div>
-
               <div class="flex items-start pt-6">
-                <UButton
-                  icon="i-lucide-trash-2"
-                  color="error"
-                  variant="ghost"
-                  size="sm"
-                  @click="removeVariant(index)"
-                />
+                <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" @click="removeVariant(index)" />
               </div>
             </div>
           </div>
 
           <div
             v-else
-            class="flex flex-col items-center gap-2 py-6 border border-dashed rounded-lg border-(--ui-border) text-(--ui-text-muted)"
+            class="flex flex-col items-center gap-2 py-8 text-(--ui-text-muted)"
           >
             <UIcon name="i-lucide-layers" class="w-7 h-7 opacity-40" />
             <span class="text-sm">尚未新增任何規格</span>
           </div>
-        </div>
+        </UPageCard>
       </UForm>
-      </div>
     </template>
   </UDashboardPanel>
 </template>
@@ -213,17 +230,29 @@
     name: string
     price: number | null
     stock: number
-    imageUrl: string
+    imageFile: File | null
+    imagePreview: string | null
   }
 
   const variants = ref<VariantDraft[]>([])
+  const variantFileRefs = ref<HTMLInputElement[]>([])
 
   function addVariant() {
-    variants.value.push({ name: '', price: null, stock: 0, imageUrl: '' })
+    variants.value.push({ name: '', price: null, stock: 0, imageFile: null, imagePreview: null })
   }
 
   function removeVariant(index: number) {
     variants.value.splice(index, 1)
+  }
+
+  function onVariantFileChange(event: Event, index: number) {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    const variant = variants.value[index]
+    if (!file || !variant) return
+    variant.imageFile = file
+    const reader = new FileReader()
+    reader.onload = (e) => { variant.imagePreview = e.target?.result as string }
+    reader.readAsDataURL(file)
   }
 
   // ── 分類 ──────────────────────────────────────────────
@@ -257,7 +286,6 @@
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     loading.value = true
     try {
-      // 1. 建立商品
       const fd = new FormData()
       fd.append('name', event.data.name)
       fd.append('categoryId', String(event.data.categoryId))
@@ -268,7 +296,6 @@
 
       const product = await apiFetch<{ id: number }>('/products', { method: 'POST', body: fd })
 
-      // 2. 批次建立規格（跳過名稱或售價未填的列）
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       if (validVariants.length > 0) {
         await Promise.all(
@@ -279,7 +306,6 @@
                 name: v.name.trim(),
                 price: v.price,
                 stock: v.stock ?? 0,
-                ...(v.imageUrl.trim() ? { imageUrl: v.imageUrl.trim() } : {})
               }
             })
           )
