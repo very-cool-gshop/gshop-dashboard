@@ -184,7 +184,7 @@
         }
       },
       { type: 'separator' as const },
-      { label: '編輯商品', icon: 'i-lucide-pencil' },
+      { label: '編輯商品', icon: 'i-lucide-pencil', to: `/products/${row.original.id}/edit` },
       { type: 'separator' as const },
       {
         label: '刪除商品',

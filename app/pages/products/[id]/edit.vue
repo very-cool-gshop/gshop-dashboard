@@ -1,0 +1,389 @@
+<template>
+  <UDashboardPanel id="products-edit" :ui="{ body: 'lg:py-12' }">
+    <template #header>
+      <UDashboardNavbar title="編輯商品">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+        <template #right>
+          <UButton label="取消" color="neutral" variant="ghost" to="/products" />
+          <UButton label="儲存變更" icon="i-lucide-check" type="submit" form="product-form" :loading="saving" />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div v-if="pageLoading" class="flex items-center justify-center py-24">
+        <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-(--ui-text-muted)" />
+      </div>
+
+      <UForm
+        v-else
+        id="product-form"
+        ref="productForm"
+        :schema="schema"
+        :state="state"
+        class="flex flex-col gap-4 sm:gap-6 lg:gap-8 w-full max-w-3xl mx-auto"
+        @submit="onSubmit"
+      >
+        <!-- ── 基本資料 ── -->
+        <UPageCard
+          title="基本資料"
+          description="商品名稱、分類、售價與上架狀態。"
+          variant="subtle"
+        >
+          <UFormField label="商品名稱" name="name" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <UInput v-model="state.name" placeholder="例：經典白 T-shirt" class="w-64" />
+          </UFormField>
+
+          <USeparator />
+
+          <UFormField label="分類" name="categoryId" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <USelect
+              v-model="state.categoryId"
+              :items="categoryOptions"
+              placeholder="請選擇分類"
+              :loading="categoriesLoading"
+              class="w-64"
+            />
+          </UFormField>
+
+          <USeparator />
+
+          <UFormField label="售價 (NT$)" name="price" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <UInput v-model.number="state.price" type="number" placeholder="0" class="w-64" />
+          </UFormField>
+
+          <USeparator />
+
+          <UFormField label="狀態" name="status" class="flex max-sm:flex-col justify-between items-start gap-4">
+            <USelect
+              v-model="state.status"
+              :items="[
+                { label: '草稿', value: 'draft' },
+                { label: '上架中', value: 'active' },
+                { label: '已下架', value: 'archived' }
+              ]"
+              class="w-64"
+            />
+          </UFormField>
+
+          <USeparator />
+
+          <UFormField
+            label="商品描述"
+            name="description"
+            description="描述商品特色、材質、尺寸等。"
+            class="flex max-sm:flex-col justify-between items-start gap-4"
+            :ui="{ container: 'w-full' }"
+          >
+            <UTextarea v-model="state.description" placeholder="描述商品特色、材質、尺寸等..." :rows="3" class="w-full" />
+          </UFormField>
+        </UPageCard>
+
+        <!-- ── 商品圖片 ── -->
+        <UPageCard
+          title="商品圖片"
+          description="建議使用正方形圖片以獲得最佳呈現效果。"
+          variant="subtle"
+        >
+          <div class="space-y-3">
+            <div
+              class="flex items-center justify-center w-full h-52 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
+              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
+              @click="fileInputRef?.click()"
+              @dragover.prevent
+              @drop.prevent="onDrop"
+            >
+              <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-contain rounded-lg" />
+              <div v-else class="flex flex-col items-center gap-2 text-(--ui-text-muted) select-none">
+                <UIcon name="i-lucide-image-plus" class="w-10 h-10 opacity-50" />
+                <span class="text-sm">點擊或拖曳圖片至此上傳</span>
+              </div>
+            </div>
+            <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+            <div v-if="imagePreview" class="flex gap-2">
+              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="fileInputRef?.click()" />
+              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="removeImage" />
+            </div>
+          </div>
+        </UPageCard>
+
+        <!-- ── 商品規格 ── -->
+        <UPageCard variant="subtle">
+          <template #header>
+            <div class="flex items-center justify-between gap-4">
+              <p class="font-semibold text-sm text-(--ui-text)">商品規格</p>
+              <UButton
+                label="新增規格"
+                icon="i-lucide-plus"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                type="button"
+                @click="addVariant"
+              />
+            </div>
+          </template>
+
+          <!-- 規格列表 -->
+          <div v-if="variants.length > 0" class="divide-y divide-(--ui-border) border border-(--ui-border) rounded-lg overflow-hidden">
+            <!-- Header -->
+            <div class="flex gap-4 items-center px-4 py-2 bg-(--ui-bg-elevated)">
+              <span class="w-16 shrink-0 text-xs font-medium text-(--ui-text)">圖片</span>
+              <span class="flex-1 text-xs font-medium text-(--ui-text)">規格名稱</span>
+              <span class="w-32 text-xs font-medium text-(--ui-text)">售價 (NT$)</span>
+              <span class="w-28 text-xs font-medium text-(--ui-text)">庫存數量</span>
+              <span class="w-8" />
+            </div>
+
+            <!-- 每列規格 -->
+            <div
+              v-for="(variant, index) in variants"
+              :key="variant.id ?? `new-${index}`"
+              class="flex gap-4 items-center px-4 py-3"
+            >
+              <div class="w-16 shrink-0">
+                <div
+                  class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors"
+                  @click="variantFileRefs[index]?.click()"
+                >
+                  <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                  <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
+                </div>
+                <input
+                  :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onVariantFileChange($event, index)"
+                />
+              </div>
+              <UInput v-model="variant.name" placeholder="例：S / 紅色" class="flex-1" />
+              <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-32" />
+              <UInput v-model.number="variant.stock" type="number" placeholder="0" class="w-28" />
+              <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" class="w-8 shrink-0" @click="removeVariant(index)" />
+            </div>
+          </div>
+
+          <div v-else class="flex flex-col items-center gap-2 py-8 text-(--ui-text-muted)">
+            <UIcon name="i-lucide-layers" class="w-7 h-7 opacity-40" />
+            <span class="text-sm">尚未新增任何規格</span>
+          </div>
+        </UPageCard>
+      </UForm>
+    </template>
+  </UDashboardPanel>
+</template>
+
+<script setup lang="ts">
+  import * as z from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
+  import type { ProductVariant } from '~/types'
+
+  // price 欄位後端回傳字串（"123.00"），需轉 Number
+
+  const route = useRoute()
+  const productId = route.params.id as string
+
+  const schema = z.object({
+    name: z.string().min(1, '請輸入商品名稱'),
+    categoryId: z.number({ error: '請選擇種類' }).int().positive('請輸入有效的分類 ID'),
+    description: z.string().optional(),
+    price: z.number({ error: '請輸入售價' }).positive('售價需大於 0'),
+    status: z.enum(['active', 'draft', 'archived'])
+  })
+
+  type Schema = z.output<typeof schema>
+
+  const state = reactive<Partial<Schema>>({
+    name: '',
+    categoryId: undefined,
+    description: '',
+    price: undefined,
+    status: 'draft'
+  })
+
+  // ── 圖片 ──────────────────────────────────────────────
+  const fileInputRef = ref<HTMLInputElement | null>(null)
+  const imagePreview = ref<string | null>(null)
+  const imageFile = ref<File | null>(null)
+
+  function onFileChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) loadPreview(file)
+  }
+
+  function onDrop(event: DragEvent) {
+    const file = event.dataTransfer?.files?.[0]
+    if (file && file.type.startsWith('image/')) loadPreview(file)
+  }
+
+  function loadPreview(file: File) {
+    imageFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => { imagePreview.value = e.target?.result as string }
+    reader.readAsDataURL(file)
+  }
+
+  function removeImage() {
+    imagePreview.value = null
+    imageFile.value = null
+    if (fileInputRef.value) fileInputRef.value.value = ''
+  }
+
+  // ── 規格 ──────────────────────────────────────────────
+  interface VariantDraft {
+    id?: number            // undefined = 新規格
+    name: string
+    price: number | null
+    stock: number
+    imageFile: File | null
+    imagePreview: string | null
+  }
+
+  const productForm = useTemplateRef('productForm')
+  const variants = ref<VariantDraft[]>([])
+  const variantFileRefs = ref<HTMLInputElement[]>([])
+  const deletedVariantIds = ref<number[]>([])
+
+  function addVariant() {
+    variants.value.push({ name: '', price: null, stock: 0, imageFile: null, imagePreview: null })
+  }
+
+  function removeVariant(index: number) {
+    const variant = variants.value[index]
+    if (variant?.id !== undefined) {
+      deletedVariantIds.value.push(variant.id)
+    }
+    variants.value.splice(index, 1)
+  }
+
+  function onVariantFileChange(event: Event, index: number) {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    const variant = variants.value[index]
+    if (!file || !variant) return
+    variant.imageFile = file
+    const reader = new FileReader()
+    reader.onload = (e) => { variant.imagePreview = e.target?.result as string }
+    reader.readAsDataURL(file)
+  }
+
+  // ── 分類 ──────────────────────────────────────────────
+  interface Category {
+    id: number
+    name: string
+  }
+
+  const apiFetch = useApiFetch()
+  const categoriesLoading = ref(false)
+  const categoryOptions = ref<{ label: string; value: number }[]>([])
+
+  async function fetchCategories() {
+    categoriesLoading.value = true
+    try {
+      const data = await apiFetch<Category[]>('/categories')
+      categoryOptions.value = data.map(cat => ({ label: cat.name, value: cat.id }))
+    } finally {
+      categoriesLoading.value = false
+    }
+  }
+
+  // ── 載入商品 ──────────────────────────────────────────
+  const pageLoading = ref(true)
+
+  async function fetchProduct() {
+    const product = await apiFetch<{
+      id: number
+      name: string
+      categoryId: number
+      description?: string
+      price: number
+      status: 'active' | 'draft' | 'archived'
+      imageUrl?: string
+      ProductVariants: ProductVariant[]
+    }>(`/products/${productId}`)
+
+    state.name = product.name
+    state.categoryId = product.categoryId
+    state.description = product.description ?? ''
+    state.price = Number(product.price)
+    state.status = product.status
+
+    if (product.imageUrl) {
+      imagePreview.value = product.imageUrl
+    }
+
+    variants.value = product.ProductVariants.map(v => ({
+      id: v.id,
+      name: v.name,
+      price: Number(v.price),
+      stock: v.stock,
+      imageFile: null,
+      imagePreview: v.imageUrl ?? null
+    }))
+  }
+
+  onMounted(async () => {
+    try {
+      await Promise.all([fetchProduct(), fetchCategories()])
+    } finally {
+      pageLoading.value = false
+    }
+  })
+
+  // ── 送出 ──────────────────────────────────────────────
+  const toast = useToast()
+  const saving = ref(false)
+
+  async function onSubmit(event: FormSubmitEvent<Schema>) {
+    saving.value = true
+    try {
+      // 更新商品基本資料
+      const productFormData = new FormData()
+      productFormData.append('name', event.data.name)
+      productFormData.append('categoryId', String(event.data.categoryId))
+      productFormData.append('description', event.data.description ?? '')
+      productFormData.append('price', String(event.data.price))
+      productFormData.append('status', event.data.status)
+      if (imageFile.value) productFormData.append('image', imageFile.value)
+
+      await apiFetch(`/products/${productId}`, { method: 'PATCH', body: productFormData })
+
+      // 刪除移除的規格
+      await Promise.all(
+        deletedVariantIds.value.map(variantId =>
+          apiFetch(`/products/${productId}/variants/${variantId}`, { method: 'DELETE' })
+        )
+      )
+      deletedVariantIds.value = []
+
+      // 新增 / 更新規格
+      const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
+      await Promise.all(
+        validVariants.map(v => {
+          const variantFormData = new FormData()
+          variantFormData.append('name', v.name.trim())
+          variantFormData.append('price', String(v.price))
+          variantFormData.append('stock', String(v.stock ?? 0))
+          if (v.imageFile) variantFormData.append('image', v.imageFile)
+
+          if (v.id !== undefined) {
+            // 既有規格 → PATCH
+            return apiFetch(`/products/${productId}/variants/${v.id}`, { method: 'PATCH', body: variantFormData })
+          } else {
+            // 新規格 → POST
+            return apiFetch(`/products/${productId}/variants`, { method: 'POST', body: variantFormData })
+          }
+        })
+      )
+
+      toast.add({ title: '儲存成功', description: `商品「${event.data.name}」已更新`, color: 'success' })
+      await navigateTo('/products')
+    } catch {
+      toast.add({ title: '儲存失敗', description: '請稍後再試', color: 'error' })
+    } finally {
+      saving.value = false
+    }
+  }
+</script>
