@@ -32,7 +32,7 @@
           <USelect
             v-model="statusFilter"
             :items="[
-              { label: '全部', value: 'all' },
+              { label: '全部狀態', value: 'all' },
               { label: '上架中', value: 'active' },
               { label: '草稿', value: 'draft' },
               { label: '已下架', value: 'inactive' }
@@ -41,6 +41,39 @@
             placeholder="篩選狀態"
             class="min-w-32"
           />
+
+          <USelect
+            v-model="categoryFilter"
+            :items="categoryFilterOptions"
+            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
+            placeholder="篩選類別"
+            class="min-w-32"
+          />
+
+          <USelect
+            v-model="sortFilter"
+            :items="sortOptions"
+            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
+            class="min-w-36"
+          />
+
+          <UPopover>
+            <UButton
+              color="neutral"
+              variant="outline"
+              trailing-icon="i-lucide-chevron-down"
+              :class="(minPrice || maxPrice) ? 'ring-2 ring-(--ui-primary)' : ''"
+            >
+              {{ minPrice || maxPrice ? `NT$ ${minPrice ?? ''}－${maxPrice ?? ''}` : '價格區間' }}
+            </UButton>
+            <template #content>
+              <div class="p-3 flex items-center gap-2">
+                <UInput v-model.number="minPrice" type="number" placeholder="最低" class="w-24" />
+                <span class="text-sm text-(--ui-text-muted)">—</span>
+                <UInput v-model.number="maxPrice" type="number" placeholder="最高" class="w-24" />
+              </div>
+            </template>
+          </UPopover>
 
           <UDropdownMenu
             :items="
@@ -137,6 +170,12 @@
     try {
       const params: Record<string, unknown> = { page: currentPage.value, limit: pageSize }
       if (nameFilter.value) params.search = nameFilter.value
+      if (categoryFilter.value !== 'all') params.categoryId = categoryFilter.value
+      if (minPrice.value) params.minPrice = minPrice.value
+      if (maxPrice.value) params.maxPrice = maxPrice.value
+      const [sortBy, order] = sortFilter.value.split('_')
+      params.sortBy = sortBy
+      params.order = order
 
       const result = await apiFetch<{ total: number; page: number; totalPages: number; data: Product[] }>(
         '/products',
@@ -153,6 +192,13 @@
     const cats = await apiFetch<Category[]>('/categories')
     categoryMap.value = new Map(cats.map(c => [c.id, c.name]))
   }
+
+  const categoryFilter = ref<number | 'all'>('all')
+
+  const categoryFilterOptions = computed(() => [
+    { label: '全部類別', value: 'all' as const },
+    ...Array.from(categoryMap.value.entries()).map(([id, name]) => ({ label: name, value: id }))
+  ])
 
   onMounted(() => {
     fetchProducts()
@@ -284,6 +330,18 @@
   )
 
   const nameFilter = ref('')
+  const minPrice = ref<number | null>(null)
+  const maxPrice = ref<number | null>(null)
+
+  const sortOptions = [
+    { label: '最新上架', value: 'createdAt_DESC' },
+    { label: '最早上架', value: 'createdAt_ASC' },
+    { label: '價格高→低', value: 'price_DESC' },
+    { label: '價格低→高', value: 'price_ASC' },
+    { label: '名稱 A→Z', value: 'name_ASC' },
+    { label: '名稱 Z→A', value: 'name_DESC' }
+  ]
+  const sortFilter = ref('createdAt_DESC')
 
   const debouncedFetch = useDebounceFn(() => {
     currentPage.value = 1
@@ -291,4 +349,15 @@
   }, 300)
 
   watch(nameFilter, debouncedFetch)
+  watch([minPrice, maxPrice], debouncedFetch)
+
+  watch(categoryFilter, () => {
+    currentPage.value = 1
+    fetchProducts()
+  })
+
+  watch(sortFilter, () => {
+    currentPage.value = 1
+    fetchProducts()
+  })
 </script>
