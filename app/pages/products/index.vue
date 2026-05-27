@@ -112,6 +112,11 @@
   const UCheckbox = resolveComponent('UCheckbox')
   const UDropdownMenu = resolveComponent('UDropdownMenu')
 
+  interface Category {
+    id: number
+    name: string
+  }
+
   const toast = useToast()
   const table = useTemplateRef('table')
 
@@ -122,6 +127,7 @@
   const apiFetch = useApiFetch()
   const loading = ref(false)
   const data = ref<Product[]>([])
+  const categoryMap = ref<Map<number, string>>(new Map())
   const total = ref(0)
   const currentPage = ref(1)
   const pageSize = 10
@@ -143,7 +149,15 @@
     }
   }
 
-  onMounted(() => fetchProducts())
+  async function fetchCategories() {
+    const cats = await apiFetch<Category[]>('/categories')
+    categoryMap.value = new Map(cats.map(c => [c.id, c.name]))
+  }
+
+  onMounted(() => {
+    fetchProducts()
+    fetchCategories()
+  })
   watch(currentPage, () => fetchProducts())
 
   const statusColorMap = {
@@ -214,7 +228,8 @@
     },
     {
       accessorKey: 'categoryId',
-      header: '分類 ID'
+      header: '類別',
+      cell: ({ row }) => categoryMap.value.get(row.original.categoryId) ?? '-'
     },
     {
       accessorKey: 'price',
