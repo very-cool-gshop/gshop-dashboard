@@ -15,6 +15,7 @@
     <template #body>
       <UForm
         id="product-form"
+        ref="productForm"
         :schema="schema"
         :state="state"
         class="flex flex-col gap-4 sm:gap-6 lg:gap-8 w-full max-w-3xl mx-auto"
@@ -97,8 +98,8 @@
             </div>
             <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onFileChange" />
             <div v-if="imagePreview" class="flex gap-2">
-              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" @click="fileInputRef?.click()" />
-              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" @click="removeImage" />
+              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="fileInputRef?.click()" />
+              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="removeImage" />
             </div>
           </div>
         </UPageCard>
@@ -116,6 +117,7 @@
                 color="neutral"
                 variant="outline"
                 size="sm"
+                type="button"
                 @click="addVariant"
               />
             </div>
@@ -157,7 +159,7 @@
               <UInput v-model="variant.name" placeholder="例：S / 紅色" class="flex-1" />
               <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-32" />
               <UInput v-model.number="variant.stock" type="number" placeholder="0" class="w-28" />
-              <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" class="w-8 shrink-0" @click="removeVariant(index)" />
+              <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" class="w-8 shrink-0" @click="removeVariant(index)" />
             </div>
           </div>
 
@@ -233,10 +235,16 @@
     imagePreview: string | null
   }
 
+  const productForm = useTemplateRef('productForm')
   const variants = ref<VariantDraft[]>([])
   const variantFileRefs = ref<HTMLInputElement[]>([])
 
-  function addVariant() {
+  async function addVariant() {
+    try {
+      await productForm.value?.validate({ name: ['name', 'categoryId', 'price'] })
+    } catch {
+      return
+    }
     variants.value.push({ name: '', price: null, stock: 0, imageFile: null, imagePreview: null })
   }
 
