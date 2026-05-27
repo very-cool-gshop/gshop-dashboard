@@ -289,29 +289,27 @@
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     loading.value = true
     try {
-      const fd = new FormData()
-      fd.append('name', event.data.name)
-      fd.append('categoryId', String(event.data.categoryId))
-      fd.append('description', event.data.description ?? '')
-      fd.append('price', String(event.data.price))
-      fd.append('status', event.data.status)
-      if (imageFile.value) fd.append('image', imageFile.value)
+      const productFormData = new FormData()
+      productFormData.append('name', event.data.name)
+      productFormData.append('categoryId', String(event.data.categoryId))
+      productFormData.append('description', event.data.description ?? '')
+      productFormData.append('price', String(event.data.price))
+      productFormData.append('status', event.data.status)
+      if (imageFile.value) productFormData.append('image', imageFile.value)
 
-      const product = await apiFetch<{ id: number }>('/products', { method: 'POST', body: fd })
+      const product = await apiFetch<{ id: number }>('/products', { method: 'POST', body: productFormData })
 
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       if (validVariants.length > 0) {
         await Promise.all(
-          validVariants.map(v =>
-            apiFetch(`/products/${product.id}/variants`, {
-              method: 'POST',
-              body: {
-                name: v.name.trim(),
-                price: v.price,
-                stock: v.stock ?? 0,
-              }
-            })
-          )
+          validVariants.map(v => {
+            const variantFormData = new FormData()
+            variantFormData.append('name', v.name.trim())
+            variantFormData.append('price', String(v.price))
+            variantFormData.append('stock', String(v.stock ?? 0))
+            if (v.imageFile) variantFormData.append('image', v.imageFile)
+            return apiFetch(`/products/${product.id}/variants`, { method: 'POST', body: variantFormData })
+          })
         )
       }
 

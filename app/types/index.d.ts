@@ -65,6 +65,15 @@ export interface Product {
   status: ProductStatus
 }
 
+export interface ProductVariant {
+  id: number
+  productId: number
+  name: string
+  price: number
+  stock: number
+  imageUrl?: string
+}
+
 export interface OrderItem {
   productId: number
   productName: string
