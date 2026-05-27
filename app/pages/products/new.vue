@@ -258,7 +258,6 @@
   interface Category {
     id: number
     name: string
-    children?: Category[]
   }
 
   const apiFetch = useApiFetch()
@@ -269,10 +268,7 @@
     categoriesLoading.value = true
     try {
       const data = await apiFetch<Category[]>('/categories')
-      categoryOptions.value = data.flatMap(cat => [
-        { label: cat.name, value: cat.id },
-        ...(cat.children ?? []).map(child => ({ label: `　${child.name}`, value: child.id }))
-      ])
+      categoryOptions.value = data.map(cat => ({ label: cat.name, value: cat.id }))
     } finally {
       categoriesLoading.value = false
     }
