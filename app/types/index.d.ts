@@ -52,17 +52,17 @@ export interface Notification {
   date: string
 }
 
-export type ProductStatus = 'active' | 'draft' | 'archived'
+export type ProductStatus = 'active' | 'inactive' | 'draft'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 
 export interface Product {
   id: number
+  categoryId: number
   name: string
-  category: string
+  description?: string
   price: number
-  stock: number
+  imageUrl?: string
   status: ProductStatus
-  image: string
 }
 
 export interface OrderItem {

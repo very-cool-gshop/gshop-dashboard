@@ -35,7 +35,7 @@
               { label: '全部', value: 'all' },
               { label: '上架中', value: 'active' },
               { label: '草稿', value: 'draft' },
-              { label: '已下架', value: 'archived' }
+              { label: '已下架', value: 'inactive' }
             ]"
             :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
             placeholder="篩選狀態"
@@ -71,12 +71,10 @@
         v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
         v-model:row-selection="rowSelection"
-        v-model:pagination="pagination"
-        :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
         class="shrink-0"
         :data="data"
         :columns="columns"
-        :loading="status === 'pending'"
+        :loading="loading"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
@@ -89,15 +87,13 @@
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
         <div class="text-sm text-muted">
-          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} of
-          {{ table?.tableApi?.getFilteredRowModel().rows.length || 0 }} row(s) selected.
+          {{ table?.tableApi?.getFilteredSelectedRowModel().rows.length || 0 }} / {{ total }} 筆已選取
         </div>
         <div class="flex items-center gap-1.5">
           <UPagination
-            :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-            :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-            :total="table?.tableApi?.getFilteredRowModel().rows.length"
-            @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+            v-model:page="currentPage"
+            :items-per-page="pageSize"
+            :total="total"
           />
         </div>
       </div>
@@ -108,7 +104,6 @@
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
   import { upperFirst } from 'scule'
-  import { getPaginationRowModel } from '@tanstack/table-core'
   import type { Row } from '@tanstack/table-core'
   import type { Product } from '~/types'
 
@@ -120,22 +115,47 @@
   const toast = useToast()
   const table = useTemplateRef('table')
 
-  const columnFilters = ref([{ id: 'name', value: '' }])
+  const columnFilters = ref<{ id: string; value: unknown }[]>([])
   const columnVisibility = ref()
   const rowSelection = ref({})
 
-  const { data, status } = await useFetch<Product[]>('/api/products', { lazy: true })
+  const apiFetch = useApiFetch()
+  const loading = ref(false)
+  const data = ref<Product[]>([])
+  const total = ref(0)
+  const currentPage = ref(1)
+  const pageSize = 10
+
+  async function fetchProducts() {
+    loading.value = true
+    try {
+      const params: Record<string, unknown> = { page: currentPage.value, limit: pageSize }
+      if (nameFilter.value) params.search = nameFilter.value
+
+      const result = await apiFetch<{ total: number; page: number; totalPages: number; data: Product[] }>(
+        '/products',
+        { params }
+      )
+      data.value = result.data
+      total.value = result.total
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => fetchProducts())
+  watch(currentPage, () => fetchProducts())
 
   const statusColorMap = {
     active: 'success',
     draft: 'warning',
-    archived: 'neutral'
+    inactive: 'neutral'
   } as const
 
   const statusLabelMap = {
     active: '上架中',
     draft: '草稿',
-    archived: '已下架'
+    inactive: '已下架'
   }
 
   function getRowItems(row: Row<Product>) {
@@ -188,23 +208,18 @@
       header: '商品名稱',
       cell: ({ row }) =>
         h('div', { class: 'flex items-center gap-3' }, [
-          h('img', { src: row.original.image, class: 'w-10 h-10 rounded object-cover' }),
+          h('img', { src: row.original.imageUrl, class: 'w-10 h-10 rounded object-cover bg-muted' }),
           h('p', { class: 'font-medium text-highlighted' }, row.original.name)
         ])
     },
     {
-      accessorKey: 'category',
-      header: '分類'
+      accessorKey: 'categoryId',
+      header: '分類 ID'
     },
     {
       accessorKey: 'price',
       header: '售價',
-      cell: ({ row }) => `NT$ ${row.original.price.toLocaleString()}`
-    },
-    {
-      accessorKey: 'stock',
-      header: '庫存',
-      cell: ({ row }) => h('span', { class: row.original.stock === 0 ? 'text-error' : '' }, row.original.stock)
+      cell: ({ row }) => `NT$ ${Number(row.original.price).toLocaleString()}`
     },
     {
       accessorKey: 'status',
@@ -253,12 +268,12 @@
     }
   )
 
-  const nameFilter = computed({
-    get: (): string => (table.value?.tableApi?.getColumn('name')?.getFilterValue() as string) || '',
-    set: (value: string) => {
-      table.value?.tableApi?.getColumn('name')?.setFilterValue(value || undefined)
-    }
-  })
+  const nameFilter = ref('')
 
-  const pagination = ref({ pageIndex: 0, pageSize: 10 })
+  const debouncedFetch = useDebounceFn(() => {
+    currentPage.value = 1
+    fetchProducts()
+  }, 300)
+
+  watch(nameFilter, debouncedFetch)
 </script>
