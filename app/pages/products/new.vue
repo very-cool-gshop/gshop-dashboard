@@ -122,43 +122,42 @@
           </template>
 
           <!-- 規格列表 -->
-          <div v-if="variants.length > 0" class="space-y-3">
+          <div v-if="variants.length > 0" class="divide-y divide-(--ui-border) border border-(--ui-border) rounded-lg overflow-hidden">
+            <!-- Header -->
+            <div class="flex gap-4 items-center px-4 py-2 bg-(--ui-bg-elevated)">
+              <span class="w-16 shrink-0 text-xs font-medium text-(--ui-text)">圖片</span>
+              <span class="flex-1 text-xs font-medium text-(--ui-text)">規格名稱</span>
+              <span class="w-32 text-xs font-medium text-(--ui-text)">售價 (NT$)</span>
+              <span class="w-28 text-xs font-medium text-(--ui-text)">庫存數量</span>
+              <span class="w-8" />
+            </div>
+
+            <!-- 每列規格 -->
             <div
               v-for="(variant, index) in variants"
               :key="index"
-              class="grid grid-cols-[1fr_auto] gap-3 p-4 border rounded-lg border-(--ui-border) bg-(--ui-bg)/60"
+              class="flex gap-4 items-center px-4 py-3"
             >
-              <div class="flex gap-4">
-                <div class="flex flex-col gap-1.5">
-                  <span class="text-sm font-medium text-(--ui-text)">圖片</span>
-                  <div
-                    class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors shrink-0"
-                    @click="variantFileRefs[index]?.click()"
-                  >
-                    <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
-                    <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
-                  </div>
-                  <input
-                    :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
-                    type="file"
-                    accept="image/*"
-                    class="hidden"
-                    @change="onVariantFileChange($event, index)"
-                  />
+              <div class="w-16 shrink-0">
+                <div
+                  class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors"
+                  @click="variantFileRefs[index]?.click()"
+                >
+                  <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                  <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
                 </div>
-                <UFormField label="規格名稱" class="flex-1">
-                  <UInput v-model="variant.name" placeholder="例：S / 紅色" class="w-full" />
-                </UFormField>
-                <UFormField label="售價 (NT$)" class="w-32">
-                  <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-full" />
-                </UFormField>
-                <UFormField label="庫存數量" class="w-28">
-                  <UInput v-model.number="variant.stock" type="number" placeholder="0" class="w-full" />
-                </UFormField>
+                <input
+                  :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onVariantFileChange($event, index)"
+                />
               </div>
-              <div class="flex items-start pt-6">
-                <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" @click="removeVariant(index)" />
-              </div>
+              <UInput v-model="variant.name" placeholder="例：S / 紅色" class="flex-1" />
+              <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-32" />
+              <UInput v-model.number="variant.stock" type="number" placeholder="0" class="w-28" />
+              <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" class="w-8 shrink-0" @click="removeVariant(index)" />
             </div>
           </div>
 
