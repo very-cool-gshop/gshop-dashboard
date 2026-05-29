@@ -52,7 +52,7 @@
               <UIcon name="i-lucide-check-circle-2" class="w-8 h-8 text-white drop-shadow" />
             </div>
             <button
-              class="absolute top-1 right-1 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error/80"
+              class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error/80"
               :class="{ 'opacity-100': deletingId === image.id }"
               type="button"
               @click.stop="deleteImage(image)"
