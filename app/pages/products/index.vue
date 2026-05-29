@@ -268,7 +268,10 @@
       header: '商品名稱',
       cell: ({ row }) =>
         h('div', { class: 'flex items-center gap-3' }, [
-          h('img', { src: row.original.imageUrl, class: 'w-10 h-10 rounded object-cover bg-muted' }),
+          h('img', {
+            src: row.original.image?.url ?? '/image-placeholder.svg',
+            class: `w-10 h-10 rounded bg-(--ui-bg-elevated) ${row.original.image?.url ? 'object-cover' : 'object-contain p-1.5'}`
+          }),
           h('p', { class: 'font-medium text-highlighted' }, row.original.name)
         ])
     },

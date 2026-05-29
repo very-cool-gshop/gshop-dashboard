@@ -55,13 +55,23 @@ export interface Notification {
 export type ProductStatus = 'active' | 'inactive' | 'draft'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 
+export interface ProductImage {
+  id: number
+  url: string
+  filename: string
+  size: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Product {
   id: number
   categoryId: number
   name: string
   description?: string
   price: number
-  imageUrl?: string
+  imageId?: number | null
+  image?: ProductImage | null
   status: ProductStatus
 }
 
@@ -71,7 +81,8 @@ export interface ProductVariant {
   name: string
   price: number
   stock: number
-  imageUrl?: string
+  imageId?: number | null
+  image?: ProductImage | null
 }
 
 export interface OrderItem {

@@ -279,7 +279,7 @@
           description: event.data.description ?? '',
           price: event.data.price,
           status: event.data.status,
-          imageIds: selectedImage.value ? [selectedImage.value.id] : []
+          imageId: selectedImage.value?.id ?? null
         }
       })
 
