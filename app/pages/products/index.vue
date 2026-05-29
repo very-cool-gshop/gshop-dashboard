@@ -22,7 +22,8 @@
             color="error"
             variant="subtle"
             icon="i-lucide-trash"
-            @click="toast.add({ title: '已刪除選取商品', color: 'error' })"
+            :loading="batchDeleteLoading"
+            @click="confirmBatchDelete"
           >
             <template #trailing>
               <UKbd>{{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}</UKbd>
@@ -132,6 +133,23 @@
       </div>
     </template>
   </UDashboardPanel>
+
+  <!-- 刪除確認 modal -->
+  <UModal v-model:open="deleteConfirmOpen" title="刪除商品">
+    <template #body>
+      <p class="text-sm text-(--ui-text-muted)">
+        確定要刪除
+        <span class="font-semibold text-(--ui-text)">{{ deleteTargetNames }}</span>
+        ？此操作無法復原。
+      </p>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton label="取消" color="neutral" variant="ghost" @click="deleteConfirmOpen = false" />
+        <UButton label="刪除" color="error" :loading="deleteLoading" @click="executeDelete" />
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -218,6 +236,43 @@
     inactive: '已下架'
   }
 
+  // ── 刪除 ──────────────────────────────────────────────
+  const deleteConfirmOpen = ref(false)
+  const deleteLoading = ref(false)
+  const batchDeleteLoading = ref(false)
+  const deleteTargetIds = ref<number[]>([])
+  const deleteTargetNames = ref('')
+
+  function confirmDelete(product: Product) {
+    deleteTargetIds.value = [product.id]
+    deleteTargetNames.value = `「${product.name}」`
+    deleteConfirmOpen.value = true
+  }
+
+  function confirmBatchDelete() {
+    const rows = table.value?.tableApi?.getFilteredSelectedRowModel().rows ?? []
+    deleteTargetIds.value = rows.map(r => r.original.id)
+    deleteTargetNames.value = rows.length === 1
+      ? `「${rows[0]!.original.name}」`
+      : `${rows.length} 項商品`
+    deleteConfirmOpen.value = true
+  }
+
+  async function executeDelete() {
+    deleteLoading.value = true
+    try {
+      await Promise.all(deleteTargetIds.value.map(id => apiFetch(`/products/${id}`, { method: 'DELETE' })))
+      toast.add({ title: '刪除成功', description: `${deleteTargetNames.value} 已刪除`, color: 'success' })
+      deleteConfirmOpen.value = false
+      rowSelection.value = {}
+      await fetchProducts()
+    } catch {
+      toast.add({ title: '刪除失敗', description: '請稍後再試', color: 'error' })
+    } finally {
+      deleteLoading.value = false
+    }
+  }
+
   function getRowItems(row: Row<Product>) {
     return [
       { type: 'label', label: 'Actions' },
@@ -237,7 +292,7 @@
         icon: 'i-lucide-trash',
         color: 'error' as const,
         onSelect() {
-          toast.add({ title: '商品已刪除', description: `${row.original.name} 已被刪除。` })
+          confirmDelete(row.original)
         }
       }
     ]
