@@ -52,7 +52,7 @@
               <UIcon name="i-lucide-check-circle-2" class="w-8 h-8 text-white drop-shadow" />
             </div>
           </div>
-          <p class="text-xs text-(--ui-text-muted) truncate text-center leading-tight px-0.5">{{ image.filename }}</p>
+          <p class="text-xs truncate text-center px-0.5" style="color: var(--ui-text-muted)">{{ image.filename }}</p>
         </div>
       </div>
 
