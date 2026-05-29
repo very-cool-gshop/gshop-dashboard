@@ -42,6 +42,14 @@
         }
       },
       {
+        label: '商品類別',
+        icon: 'i-lucide-tag',
+        to: '/categories',
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
         label: '訂單管理',
         icon: 'i-lucide-shopping-bag',
         to: '/orders',
