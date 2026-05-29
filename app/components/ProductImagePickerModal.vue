@@ -35,7 +35,7 @@
         <div
           v-for="image in images"
           :key="image.id"
-          class="flex flex-col gap-1 cursor-pointer"
+          class="group flex flex-col gap-1 cursor-pointer"
           @click="pending = image"
         >
           <div
@@ -51,6 +51,18 @@
             >
               <UIcon name="i-lucide-check-circle-2" class="w-8 h-8 text-white drop-shadow" />
             </div>
+            <button
+              class="absolute top-1 right-1 p-1 rounded-md bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error/80"
+              :class="{ 'opacity-100': deletingId === image.id }"
+              type="button"
+              @click.stop="deleteImage(image)"
+            >
+              <UIcon
+                :name="deletingId === image.id ? 'i-lucide-loader-circle' : 'i-lucide-trash-2'"
+                class="w-3.5 h-3.5"
+                :class="{ 'animate-spin': deletingId === image.id }"
+              />
+            </button>
           </div>
           <p class="text-xs truncate text-center px-0.5" style="color: var(--ui-text-muted)">{{ image.filename }}</p>
         </div>
@@ -100,6 +112,7 @@
   const uploading = ref(false)
   const pending = ref<ProductImage | null>(null)
   const search = ref('')
+  const deletingId = ref<number | null>(null)
 
   let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -149,6 +162,18 @@
     } finally {
       uploading.value = false
       if (uploadInputRef.value) uploadInputRef.value.value = ''
+    }
+  }
+
+  async function deleteImage(image: ProductImage) {
+    deletingId.value = image.id
+    try {
+      await apiFetch(`/images/${image.id}`, { method: 'DELETE' })
+      images.value = images.value.filter(i => i.id !== image.id)
+      total.value--
+      if (pending.value?.id === image.id) pending.value = null
+    } finally {
+      deletingId.value = null
     }
   }
 
