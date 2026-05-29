@@ -85,24 +85,23 @@
           <div class="space-y-3">
             <div
               class="flex items-center justify-center w-full h-52 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
-              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
-              @click="fileInputRef?.click()"
-              @dragover.prevent
-              @drop.prevent="onDrop"
+              :class="selectedImage ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
+              @click="imagePickerOpen = true"
             >
-              <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-contain rounded-lg" />
+              <img v-if="selectedImage" :src="selectedImage.url" class="w-full h-full object-contain rounded-lg" />
               <div v-else class="flex flex-col items-center gap-2 text-(--ui-text-muted) select-none">
                 <UIcon name="i-lucide-image-plus" class="w-10 h-10 opacity-50" />
-                <span class="text-sm">點擊或拖曳圖片至此上傳</span>
+                <span class="text-sm">點擊選擇圖片</span>
               </div>
             </div>
-            <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-            <div v-if="imagePreview" class="flex gap-2">
-              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="fileInputRef?.click()" />
-              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="removeImage" />
+            <div v-if="selectedImage" class="flex gap-2">
+              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="imagePickerOpen = true" />
+              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="selectedImage = null" />
             </div>
           </div>
         </UPageCard>
+
+        <ProductImagePickerModal v-model:open="imagePickerOpen" @select="selectedImage = $event" />
 
         <!-- ── 商品規格 ── -->
         <UPageCard variant="subtle">
@@ -199,32 +198,15 @@
   })
 
   // ── 圖片 ──────────────────────────────────────────────
-  const fileInputRef = ref<HTMLInputElement | null>(null)
-  const imagePreview = ref<string | null>(null)
-  const imageFile = ref<File | null>(null)
-
-  function onFileChange(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    if (file) loadPreview(file)
+  interface ProductImage {
+    id: number
+    url: string
+    filename: string
+    size: number
   }
 
-  function onDrop(event: DragEvent) {
-    const file = event.dataTransfer?.files?.[0]
-    if (file && file.type.startsWith('image/')) loadPreview(file)
-  }
-
-  function loadPreview(file: File) {
-    imageFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => { imagePreview.value = e.target?.result as string }
-    reader.readAsDataURL(file)
-  }
-
-  function removeImage() {
-    imagePreview.value = null
-    imageFile.value = null
-    if (fileInputRef.value) fileInputRef.value.value = ''
-  }
+  const imagePickerOpen = ref(false)
+  const selectedImage = ref<ProductImage | null>(null)
 
   // ── 規格 ──────────────────────────────────────────────
   interface VariantDraft {
@@ -289,15 +271,17 @@
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     loading.value = true
     try {
-      const productFormData = new FormData()
-      productFormData.append('name', event.data.name)
-      productFormData.append('categoryId', String(event.data.categoryId))
-      productFormData.append('description', event.data.description ?? '')
-      productFormData.append('price', String(event.data.price))
-      productFormData.append('status', event.data.status)
-      if (imageFile.value) productFormData.append('image', imageFile.value)
-
-      const product = await apiFetch<{ id: number }>('/products', { method: 'POST', body: productFormData })
+      const product = await apiFetch<{ id: number }>('/products', {
+        method: 'POST',
+        body: {
+          name: event.data.name,
+          categoryId: event.data.categoryId,
+          description: event.data.description ?? '',
+          price: event.data.price,
+          status: event.data.status,
+          imageIds: selectedImage.value ? [selectedImage.value.id] : []
+        }
+      })
 
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       if (validVariants.length > 0) {
