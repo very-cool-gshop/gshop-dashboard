@@ -102,6 +102,7 @@
         </UPageCard>
 
         <ProductImagePickerModal v-model:open="imagePickerOpen" @select="selectedImage = $event" />
+        <ProductImagePickerModal v-model:open="variantPickerOpen" @select="onVariantImageSelect($event)" />
 
         <!-- ── 商品規格 ── -->
         <UPageCard variant="subtle">
@@ -142,18 +143,11 @@
               <div class="w-16 shrink-0">
                 <div
                   class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors"
-                  @click="variantFileRefs[index]?.click()"
+                  @click="openVariantPicker(index)"
                 >
-                  <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                  <img v-if="variant.imageUrl" :src="variant.imageUrl" class="w-full h-full object-cover" />
                   <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
                 </div>
-                <input
-                  :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="onVariantFileChange($event, index)"
-                />
               </div>
               <UInput v-model="variant.name" placeholder="例：S / 紅色" class="flex-1" />
               <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-32" />
@@ -213,13 +207,28 @@
     name: string
     price: number | null
     stock: number
-    imageFile: File | null
-    imagePreview: string | null
+    imageId: number | null
+    imageUrl: string | null
   }
 
   const productForm = useTemplateRef('productForm')
   const variants = ref<VariantDraft[]>([])
-  const variantFileRefs = ref<HTMLInputElement[]>([])
+
+  const variantPickerOpen = ref(false)
+  const activeVariantIndex = ref<number>(-1)
+
+  function openVariantPicker(index: number) {
+    activeVariantIndex.value = index
+    variantPickerOpen.value = true
+  }
+
+  function onVariantImageSelect(image: ProductImage) {
+    const variant = variants.value[activeVariantIndex.value]
+    if (variant) {
+      variant.imageId = image.id
+      variant.imageUrl = image.url
+    }
+  }
 
   async function addVariant() {
     try {
@@ -227,21 +236,11 @@
     } catch {
       return
     }
-    variants.value.push({ name: '', price: null, stock: 0, imageFile: null, imagePreview: null })
+    variants.value.push({ name: '', price: null, stock: 0, imageId: null, imageUrl: null })
   }
 
   function removeVariant(index: number) {
     variants.value.splice(index, 1)
-  }
-
-  function onVariantFileChange(event: Event, index: number) {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    const variant = variants.value[index]
-    if (!file || !variant) return
-    variant.imageFile = file
-    const reader = new FileReader()
-    reader.onload = (e) => { variant.imagePreview = e.target?.result as string }
-    reader.readAsDataURL(file)
   }
 
   // ── 分類 ──────────────────────────────────────────────
@@ -286,14 +285,17 @@
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       if (validVariants.length > 0) {
         await Promise.all(
-          validVariants.map(v => {
-            const variantFormData = new FormData()
-            variantFormData.append('name', v.name.trim())
-            variantFormData.append('price', String(v.price))
-            variantFormData.append('stock', String(v.stock ?? 0))
-            if (v.imageFile) variantFormData.append('image', v.imageFile)
-            return apiFetch(`/products/${product.id}/variants`, { method: 'POST', body: variantFormData })
-          })
+          validVariants.map(v =>
+            apiFetch(`/products/${product.id}/variants`, {
+              method: 'POST',
+              body: {
+                name: v.name.trim(),
+                price: v.price,
+                stock: v.stock ?? 0,
+                imageId: v.imageId ?? null
+              }
+            })
+          )
         )
       }
 
