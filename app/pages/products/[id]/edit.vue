@@ -300,7 +300,7 @@
       description?: string
       price: number
       status: 'active' | 'draft' | 'archived'
-      imageUrl?: string
+      image?: { id: number; url: string } | null
       ProductVariants: ProductVariant[]
     }>(`/products/${productId}`)
 
@@ -310,8 +310,8 @@
     state.price = Number(product.price)
     state.status = product.status
 
-    if (product.imageUrl) {
-      imagePreview.value = product.imageUrl
+    if (product.image?.url) {
+      imagePreview.value = product.image.url
     }
 
     variants.value = product.ProductVariants.map(v => ({
@@ -320,7 +320,7 @@
       price: Number(v.price),
       stock: v.stock,
       imageFile: null,
-      imagePreview: v.imageUrl ?? null
+      imagePreview: v.image?.url ?? null
     }))
   }
 
@@ -339,18 +339,29 @@
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = true
     try {
-      // 更新商品基本資料
-      const productFormData = new FormData()
-      productFormData.append('name', event.data.name)
-      productFormData.append('categoryId', String(event.data.categoryId))
-      productFormData.append('description', event.data.description ?? '')
-      productFormData.append('price', String(event.data.price))
-      productFormData.append('status', event.data.status)
-      if (imageFile.value) productFormData.append('image', imageFile.value)
+      // 1. 有新圖片時先上傳，取得 imageId
+      let imageId: number | undefined
+      if (imageFile.value) {
+        const imgFormData = new FormData()
+        imgFormData.append('image', imageFile.value)
+        const uploaded = await apiFetch<{ id: number }>('/images', { method: 'POST', body: imgFormData })
+        imageId = uploaded.id
+      }
 
-      await apiFetch(`/products/${productId}`, { method: 'PATCH', body: productFormData })
+      // 2. 以 JSON 更新商品基本資料
+      await apiFetch(`/products/${productId}`, {
+        method: 'PATCH',
+        body: {
+          name: event.data.name,
+          categoryId: event.data.categoryId,
+          description: event.data.description ?? '',
+          price: event.data.price,
+          status: event.data.status,
+          ...(imageId !== undefined && { imageId }),
+        },
+      })
 
-      // 刪除移除的規格
+      // 3. 刪除移除的規格
       await Promise.all(
         deletedVariantIds.value.map(variantId =>
           apiFetch(`/products/${productId}/variants/${variantId}`, { method: 'DELETE' })
@@ -358,22 +369,29 @@
       )
       deletedVariantIds.value = []
 
-      // 新增 / 更新規格
+      // 4. 新增 / 更新規格
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       await Promise.all(
-        validVariants.map(v => {
-          const variantFormData = new FormData()
-          variantFormData.append('name', v.name.trim())
-          variantFormData.append('price', String(v.price))
-          variantFormData.append('stock', String(v.stock ?? 0))
-          if (v.imageFile) variantFormData.append('image', v.imageFile)
+        validVariants.map(async v => {
+          let variantImageId: number | undefined
+          if (v.imageFile) {
+            const variantImgFormData = new FormData()
+            variantImgFormData.append('image', v.imageFile)
+            const uploaded = await apiFetch<{ id: number }>('/images', { method: 'POST', body: variantImgFormData })
+            variantImageId = uploaded.id
+          }
+
+          const body = {
+            name: v.name.trim(),
+            price: v.price,
+            stock: v.stock ?? 0,
+            ...(variantImageId !== undefined && { imageId: variantImageId }),
+          }
 
           if (v.id !== undefined) {
-            // 既有規格 → PATCH
-            return apiFetch(`/products/${productId}/variants/${v.id}`, { method: 'PATCH', body: variantFormData })
+            return apiFetch(`/products/${productId}/variants/${v.id}`, { method: 'PATCH', body })
           } else {
-            // 新規格 → POST
-            return apiFetch(`/products/${productId}/variants`, { method: 'POST', body: variantFormData })
+            return apiFetch(`/products/${productId}/variants`, { method: 'POST', body })
           }
         })
       )
