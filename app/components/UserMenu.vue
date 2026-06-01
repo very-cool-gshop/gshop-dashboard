@@ -42,7 +42,7 @@
   }>()
 
   const colorMode = useColorMode()
-  const { user: authUser, logout } = useAuth()
+  const { user: authUser, logout } = useGlobalState()
 
   const user = computed(() => ({
     name: authUser.value?.name ?? '',

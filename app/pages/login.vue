@@ -31,7 +31,7 @@
   definePageMeta({ layout: 'auth' })
 
   const toast = useToast()
-  const { login } = useAuth()
+  const { login } = useGlobalState()
 
   const state = reactive({
     email: '',

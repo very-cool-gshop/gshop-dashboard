@@ -1,7 +1,6 @@
 export function useApiFetch() {
   const { public: { apiBase } } = useRuntimeConfig()
-  const token = useCookie('token')
-  const user = useState('auth:user')
+  const { token, user } = useGlobalState()
 
   async function apiFetch<T>(url: string, options: Record<string, any> = {}): Promise<T> {
     try {
