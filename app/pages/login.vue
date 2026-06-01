@@ -28,10 +28,11 @@
 </template>
 
 <script setup lang="ts">
+  import { login } from '~/api/auth'
+
   definePageMeta({ layout: 'auth' })
 
   const toast = useToast()
-  const { login } = useGlobalState()
 
   const state = reactive({
     email: '',

@@ -36,13 +36,14 @@
 
 <script setup lang="ts">
   import type { DropdownMenuItem } from '@nuxt/ui'
+  import { logout } from '~/api/auth'
 
   defineProps<{
     collapsed?: boolean
   }>()
 
   const colorMode = useColorMode()
-  const { user: authUser, logout } = useGlobalState()
+  const { user: authUser } = useGlobalState()
 
   const user = computed(() => ({
     name: authUser.value?.name ?? '',

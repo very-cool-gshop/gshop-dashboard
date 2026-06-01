@@ -14,10 +14,21 @@ export interface LoginResponse {
   user: User
 }
 
-export function login(email: string, password: string) {
+export async function login(email: string, password: string) {
   const { public: { apiBase } } = useRuntimeConfig()
-  return $fetch<LoginResponse>(`${apiBase}/auth/login`, {
+  const { token, user } = useGlobalState()
+
+  const res = await $fetch<LoginResponse>(`${apiBase}/auth/login`, {
     method: 'POST',
     body: { email, password }
   })
+  token.value = res.token
+  user.value = res.user
+}
+
+export function logout() {
+  const { token, user } = useGlobalState()
+  token.value = null
+  user.value = null
+  navigateTo('/login')
 }
