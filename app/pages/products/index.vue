@@ -115,8 +115,10 @@
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default',
-          separator: 'h-0'
+          separator: 'h-0',
+          tr: 'cursor-pointer hover:bg-elevated/50',
         }"
+        @select="(_e, row) => navigateTo(`/products/${row.original.id}/edit`)"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
@@ -155,13 +157,10 @@
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
   import { upperFirst } from 'scule'
-  import type { Row } from '@tanstack/table-core'
   import type { Product } from '~/types'
 
   const UBadge = resolveComponent('UBadge')
-  const UButton = resolveComponent('UButton')
   const UCheckbox = resolveComponent('UCheckbox')
-  const UDropdownMenu = resolveComponent('UDropdownMenu')
 
   interface Category {
     id: number
@@ -243,12 +242,6 @@
   const deleteTargetIds = ref<number[]>([])
   const deleteTargetNames = ref('')
 
-  function confirmDelete(product: Product) {
-    deleteTargetIds.value = [product.id]
-    deleteTargetNames.value = `「${product.name}」`
-    deleteConfirmOpen.value = true
-  }
-
   function confirmBatchDelete() {
     const rows = table.value?.tableApi?.getFilteredSelectedRowModel().rows ?? []
     deleteTargetIds.value = rows.map(r => r.original.id)
@@ -271,31 +264,6 @@
     } finally {
       deleteLoading.value = false
     }
-  }
-
-  function getRowItems(row: Row<Product>) {
-    return [
-      { type: 'label', label: 'Actions' },
-      {
-        label: '複製商品 ID',
-        icon: 'i-lucide-copy',
-        onSelect() {
-          navigator.clipboard.writeText(row.original.id.toString())
-          toast.add({ title: '已複製到剪貼簿', description: `商品 ID：${row.original.id}` })
-        }
-      },
-      { type: 'separator' as const },
-      { label: '編輯商品', icon: 'i-lucide-pencil', to: `/products/${row.original.id}/edit` },
-      { type: 'separator' as const },
-      {
-        label: '刪除商品',
-        icon: 'i-lucide-trash',
-        color: 'error' as const,
-        onSelect() {
-          confirmDelete(row.original)
-        }
-      }
-    ]
   }
 
   const columns: TableColumn<Product>[] = [
@@ -351,28 +319,6 @@
           () => statusLabelMap[row.original.status]
         )
     },
-    {
-      id: 'actions',
-      cell: ({ row }) =>
-        h(
-          'div',
-          { class: 'text-right' },
-          h(
-            UDropdownMenu,
-            {
-              content: { align: 'end' },
-              items: getRowItems(row)
-            },
-            () =>
-              h(UButton, {
-                icon: 'i-lucide-ellipsis-vertical',
-                color: 'neutral',
-                variant: 'ghost',
-                class: 'ml-auto'
-              })
-          )
-        )
-    }
   ]
 
   const statusFilter = ref('all')
