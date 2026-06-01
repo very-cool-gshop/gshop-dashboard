@@ -14,6 +14,16 @@ export interface LoginResponse {
   user: User
 }
 
+export async function fetchMe() {
+  const { public: { apiBase } } = useRuntimeConfig()
+  const { token, user } = useGlobalState()
+
+  const res = await $fetch<User>(`${apiBase}/auth/me`, {
+    headers: { Authorization: `Bearer ${token.value}` }
+  })
+  user.value = res
+}
+
 export async function login(email: string, password: string) {
   const { public: { apiBase } } = useRuntimeConfig()
   const { token, user } = useGlobalState()
