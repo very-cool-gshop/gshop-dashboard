@@ -46,27 +46,6 @@
             placeholder="篩選角色"
             class="min-w-28"
           />
-          <UDropdownMenu
-            :items="
-              table?.tableApi
-                ?.getAllColumns()
-                .filter((column: any) => column.getCanHide())
-                .map((column: any) => ({
-                  label: upperFirst(column.id),
-                  type: 'checkbox' as const,
-                  checked: column.getIsVisible(),
-                  onUpdateChecked(checked: boolean) {
-                    table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-                  },
-                  onSelect(e?: Event) {
-                    e?.preventDefault()
-                  }
-                }))
-            "
-            :content="{ align: 'end' }"
-          >
-            <UButton label="顯示" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
-          </UDropdownMenu>
         </div>
       </div>
 
@@ -113,8 +92,7 @@
 
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
-  import { upperFirst } from 'scule'
-  import { getPaginationRowModel } from '@tanstack/table-core'
+import { getPaginationRowModel } from '@tanstack/table-core'
   import type { Row } from '@tanstack/table-core'
   import type { User } from '~/types'
 
