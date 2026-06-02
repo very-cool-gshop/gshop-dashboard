@@ -3,13 +3,15 @@
   import type { Order } from '~/types'
 
   const UBadge = resolveComponent('UBadge')
-  const UButton = resolveComponent('UButton')
-  const UDropdownMenu = resolveComponent('UDropdownMenu')
 
-  const toast = useToast()
   const table = useTemplateRef('table')
 
-  const { data, status } = await useFetch<Order[]>('/api/orders', { lazy: true })
+  const apiFetch = useApiFetch()
+  const { data: ordersRes, status } = await useAsyncData<{ data: Order[] }>(
+    'orders',
+    () => apiFetch('/orders', { params: { limit: 200 } }),
+    { lazy: true }
+  )
 
   const search = ref('')
   const statusFilter = ref('all')
@@ -17,7 +19,7 @@
 
   const statusColorMap = {
     pending: 'warning',
-    processing: 'info',
+    paid: 'info',
     shipped: 'primary',
     delivered: 'success',
     cancelled: 'error'
@@ -25,56 +27,36 @@
 
   const statusLabelMap = {
     pending: '待確認',
-    processing: '處理中',
+    paid: '已付款',
     shipped: '已出貨',
     delivered: '已送達',
     cancelled: '已取消'
-  }
-
-  function getRowItems(row: { original: Order }) {
-    return [
-      { label: '查看詳情', icon: 'i-lucide-eye' },
-      { label: '複製訂單編號', icon: 'i-lucide-copy',
-        onSelect() {
-          navigator.clipboard.writeText(row.original.id)
-          toast.add({ title: '已複製訂單編號' })
-        }
-      },
-      { type: 'separator' as const },
-      {
-        label: '取消訂單',
-        icon: 'i-lucide-x-circle',
-        color: 'error' as const,
-        onSelect() {
-          toast.add({ title: `訂單 ${row.original.id} 已取消`, color: 'error' })
-        }
-      }
-    ]
   }
 
   const columns: TableColumn<Order>[] = [
     {
       accessorKey: 'id',
       header: '訂單編號',
-      cell: ({ row }) => h('span', { class: 'font-mono font-medium' }, row.original.id)
+      cell: ({ row }) => h('span', { class: 'font-mono font-medium' }, `#${row.original.id}`)
     },
     {
-      accessorKey: 'customerName',
-      header: '買家',
+      accessorKey: 'recipientName',
+      header: '收件者',
       cell: ({ row }) =>
         h('div', [
-          h('p', { class: 'font-medium text-highlighted' }, row.original.customerName),
-          h('p', { class: 'text-sm text-muted' }, row.original.customerEmail)
+          h('p', { class: 'font-medium text-highlighted' }, row.original.recipientName),
+          h('p', { class: 'text-sm text-muted' }, row.original.recipientPhone)
         ])
     },
     {
-      accessorKey: 'date',
-      header: '日期'
+      accessorKey: 'createdAt',
+      header: '日期',
+      cell: ({ row }) => row.original.createdAt.slice(0, 10)
     },
     {
-      accessorKey: 'total',
+      accessorKey: 'totalAmount',
       header: '金額',
-      cell: ({ row }) => `NT$ ${row.original.total.toLocaleString()}`
+      cell: ({ row }) => `NT$ ${Number(row.original.totalAmount).toLocaleString()}`
     },
     {
       accessorKey: 'status',
@@ -84,28 +66,13 @@
           variant: 'subtle',
           color: statusColorMap[row.original.status]
         }, () => statusLabelMap[row.original.status])
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) =>
-        h('div', { class: 'text-right' },
-          h(UDropdownMenu, {
-            content: { align: 'end' },
-            items: getRowItems(row)
-          }, () => h(UButton, {
-            icon: 'i-lucide-ellipsis-vertical',
-            color: 'neutral',
-            variant: 'ghost',
-            class: 'ml-auto'
-          }))
-        )
     }
   ]
 
   const filtered = computed(() => {
-    if (!data.value) return []
-    return data.value.filter(o => {
-      const matchSearch = o.id.includes(search.value) || o.customerName.includes(search.value)
+    const orders = ordersRes.value?.data ?? []
+    return orders.filter(o => {
+      const matchSearch = String(o.id).includes(search.value) || o.recipientName.includes(search.value)
       const matchStatus = statusFilter.value === 'all' || o.status === statusFilter.value
       return matchSearch && matchStatus
     })
@@ -130,7 +97,7 @@
           :items="[
             { label: '全部', value: 'all' },
             { label: '待確認', value: 'pending' },
-            { label: '處理中', value: 'processing' },
+            { label: '已付款', value: 'paid' },
             { label: '已出貨', value: 'shipped' },
             { label: '已送達', value: 'delivered' },
             { label: '已取消', value: 'cancelled' }
@@ -151,9 +118,11 @@
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
+          tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default'
         }"
+        @select="(_e: Event, row) => navigateTo(`/orders/${row.original.id}/edit`)"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">

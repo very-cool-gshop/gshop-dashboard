@@ -54,7 +54,7 @@ export interface Notification {
 }
 
 export type ProductStatus = 'active' | 'inactive' | 'draft'
-export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
 
 export interface ProductImage {
   id: number
@@ -87,20 +87,31 @@ export interface ProductVariant {
 }
 
 export interface OrderItem {
+  id: number
+  orderId: number
   productId: number
+  variantId: number | null
   productName: string
+  variantName: string | null
+  unitPrice: number
   quantity: number
-  price: number
+  subtotal: number
 }
 
 export interface Order {
-  id: string
-  customerName: string
-  customerEmail: string
+  id: number
+  userId: number
   status: OrderStatus
-  total: number
-  items: OrderItem[]
-  date: string
+  totalAmount: number
+  discountAmount: number
+  address: string
+  recipientName: string
+  recipientPhone: string
+  note: string | null
+  createdAt: string
+  updatedAt: string
+  OrderItems?: OrderItem[]
+  User?: { id: number; username: string; email: string }
 }
 
 export type Period = 'daily' | 'weekly' | 'monthly'
