@@ -16,16 +16,7 @@
           open.value = false
         }
       },
-      {
-        label: '收件匣',
-        icon: 'i-lucide-inbox',
-        to: '/inbox',
-        badge: '4',
-        onSelect: () => {
-          open.value = false
-        }
-      },
-      {
+{
         label: '客戶管理',
         icon: 'i-lucide-users',
         to: '/customers',

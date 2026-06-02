@@ -48,12 +48,7 @@
 
   const items = [
     [
-      {
-        label: '新增郵件',
-        icon: 'i-lucide-send',
-        to: '/inbox'
-      },
-      {
+{
         label: '新增客戶',
         icon: 'i-lucide-user-plus',
         to: '/customers'
