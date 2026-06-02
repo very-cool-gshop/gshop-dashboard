@@ -16,7 +16,7 @@
       <CustomersDetailSlideover v-model:open="detailOpen" :user-id="selectedUserId" />
 
       <div class="flex flex-wrap items-center justify-between gap-1.5">
-        <UInput v-model="searchInput" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋姓名或信箱..." @keydown.enter="submitSearch" />
+        <UInput v-model="searchInput" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋姓名或信箱..." />
 
         <div class="flex flex-wrap items-center gap-1.5">
           <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length">
@@ -113,19 +113,21 @@ import { getPaginationRowModel } from '@tanstack/table-core'
 
   const apiFetch = useApiFetch()
   const searchInput = ref('')
-  const searchQuery = ref('')
-
-  function submitSearch() {
-    searchQuery.value = searchInput.value
-  }
+  const roleFilter = ref('all')
 
   const { data, status, refresh } = await useAsyncData<User[]>(
     'customers',
-    () => apiFetch('/users', { params: searchQuery.value ? { q: searchQuery.value } : {} }),
+    () => apiFetch('/users', {
+      params: {
+        ...(searchInput.value ? { search: searchInput.value } : {}),
+        ...(roleFilter.value !== 'all' ? { role: roleFilter.value } : {})
+      }
+    }),
     { lazy: true }
   )
 
-  watch(searchQuery, () => refresh())
+  watchDebounced(searchInput, () => refresh(), { debounce: 400 })
+  watch(roleFilter, () => refresh())
 
   function getRowItems(row: Row<User>) {
     return [
@@ -256,20 +258,6 @@ import { getPaginationRowModel } from '@tanstack/table-core'
       }
     }
   ]
-
-  const roleFilter = ref('all')
-
-  watch(
-    () => roleFilter.value,
-    (newVal) => {
-      if (!table?.value?.tableApi) return
-
-      const roleColumn = table.value.tableApi.getColumn('role')
-      if (!roleColumn) return
-
-      roleColumn.setFilterValue(newVal === 'all' ? undefined : newVal)
-    }
-  )
 
 
 
