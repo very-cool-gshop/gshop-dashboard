@@ -16,7 +16,7 @@
       <CustomersDetailSlideover v-model:open="detailOpen" :user-id="selectedUserId" />
 
       <div class="flex flex-wrap items-center justify-between gap-1.5">
-        <UInput v-model="email" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋 Email..." />
+        <UInput v-model="searchInput" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋姓名或信箱..." @keydown.enter="submitSearch" />
 
         <div class="flex flex-wrap items-center gap-1.5">
           <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length">
@@ -72,7 +72,6 @@
 
       <UTable
         ref="table"
-        v-model:column-filters="columnFilters"
         v-model:column-visibility="columnVisibility"
         v-model:row-selection="rowSelection"
         v-model:pagination="pagination"
@@ -131,21 +130,24 @@
   const detailOpen = ref(false)
   const selectedUserId = ref<number | null>(null)
 
-  const columnFilters = ref([
-    {
-      id: 'email',
-      value: ''
-    }
-  ])
   const columnVisibility = ref()
   const rowSelection = ref({})
 
   const apiFetch = useApiFetch()
-  const { data, status } = await useAsyncData<User[]>(
+  const searchInput = ref('')
+  const searchQuery = ref('')
+
+  function submitSearch() {
+    searchQuery.value = searchInput.value
+  }
+
+  const { data, status, refresh } = await useAsyncData<User[]>(
     'customers',
-    () => apiFetch('/users'),
+    () => apiFetch('/users', { params: searchQuery.value ? { q: searchQuery.value } : {} }),
     { lazy: true }
   )
+
+  watch(searchQuery, () => refresh())
 
   function getRowItems(row: Row<User>) {
     return [
@@ -218,7 +220,7 @@
     },
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: '姓名',
       cell: ({ row }) => {
         return h('div', { class: 'flex items-center gap-3' }, [
           h(UAvatar, {
@@ -231,31 +233,16 @@
     },
     {
       accessorKey: 'email',
-      header: ({ column }) => {
-        const isSorted = column.getIsSorted()
-
-        return h(UButton, {
-          color: 'neutral',
-          variant: 'ghost',
-          label: 'Email',
-          icon: isSorted
-            ? isSorted === 'asc'
-              ? 'i-lucide-arrow-up-narrow-wide'
-              : 'i-lucide-arrow-down-wide-narrow'
-            : 'i-lucide-arrow-up-down',
-          class: '-mx-2.5',
-          onClick: () => column.toggleSorting(column.getIsSorted() === 'asc')
-        })
-      }
+      header: '信箱'
     },
     {
       accessorKey: 'phone',
-      header: 'Phone',
+      header: '電話',
       cell: ({ row }) => row.original.phone ?? '-'
     },
     {
       accessorKey: 'role',
-      header: 'Role',
+      header: '權限',
       cell: ({ row }) => {
         const color = {
           admin: 'primary' as const,
@@ -306,14 +293,7 @@
     }
   )
 
-  const email = computed({
-    get: (): string => {
-      return (table.value?.tableApi?.getColumn('email')?.getFilterValue() as string) || ''
-    },
-    set: (value: string) => {
-      table.value?.tableApi?.getColumn('email')?.setFilterValue(value || undefined)
-    }
-  })
+
 
   const pagination = ref({
     pageIndex: 0,
