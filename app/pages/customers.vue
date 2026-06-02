@@ -13,6 +13,8 @@
     </template>
 
     <template #body>
+      <CustomersDetailSlideover v-model:open="detailOpen" :user-id="selectedUserId" />
+
       <div class="flex flex-wrap items-center justify-between gap-1.5">
         <UInput v-model="email" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋 Email..." />
 
@@ -34,15 +36,14 @@
           </CustomersDeleteModal>
 
           <USelect
-            v-model="statusFilter"
+            v-model="roleFilter"
             :items="[
               { label: '全部', value: 'all' },
-              { label: '已訂閱', value: 'subscribed' },
-              { label: '未訂閱', value: 'unsubscribed' },
-              { label: '已退信', value: 'bounced' }
+              { label: '管理員', value: 'admin' },
+              { label: '客戶', value: 'customer' }
             ]"
             :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
-            placeholder="篩選狀態"
+            placeholder="篩選角色"
             class="min-w-28"
           />
           <UDropdownMenu
@@ -127,6 +128,9 @@
   const toast = useToast()
   const table = useTemplateRef('table')
 
+  const detailOpen = ref(false)
+  const selectedUserId = ref<number | null>(null)
+
   const columnFilters = ref([
     {
       id: 'email',
@@ -134,11 +138,14 @@
     }
   ])
   const columnVisibility = ref()
-  const rowSelection = ref({ 1: true })
+  const rowSelection = ref({})
 
-  const { data, status } = await useFetch<User[]>('/api/customers', {
-    lazy: true
-  })
+  const apiFetch = useApiFetch()
+  const { data, status } = await useAsyncData<User[]>(
+    'customers',
+    () => apiFetch('/users'),
+    { lazy: true }
+  )
 
   function getRowItems(row: Row<User>) {
     return [
@@ -162,7 +169,11 @@
       },
       {
         label: '查看客戶詳情',
-        icon: 'i-lucide-list'
+        icon: 'i-lucide-list',
+        onSelect() {
+          selectedUserId.value = row.original.id
+          detailOpen.value = true
+        }
       },
       {
         label: '查看付款記錄',
@@ -211,13 +222,10 @@
       cell: ({ row }) => {
         return h('div', { class: 'flex items-center gap-3' }, [
           h(UAvatar, {
-            ...row.original.avatar,
+            src: row.original.avatar ?? undefined,
             size: 'lg'
           }),
-          h('div', undefined, [
-            h('p', { class: 'font-medium text-highlighted' }, row.original.name),
-            h('p', { class: '' }, `@${row.original.name}`)
-          ])
+          h('p', { class: 'font-medium text-highlighted' }, row.original.name)
         ])
       }
     },
@@ -241,22 +249,20 @@
       }
     },
     {
-      accessorKey: 'location',
-      header: 'Location',
-      cell: ({ row }) => row.original.location
+      accessorKey: 'phone',
+      header: 'Phone',
+      cell: ({ row }) => row.original.phone ?? '-'
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      filterFn: 'equals',
+      accessorKey: 'role',
+      header: 'Role',
       cell: ({ row }) => {
         const color = {
-          subscribed: 'success' as const,
-          unsubscribed: 'error' as const,
-          bounced: 'warning' as const
-        }[row.original.status]
+          admin: 'primary' as const,
+          customer: 'neutral' as const
+        }[row.original.role]
 
-        return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () => row.original.status)
+        return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () => row.original.role)
       }
     },
     {
@@ -286,21 +292,17 @@
     }
   ]
 
-  const statusFilter = ref('all')
+  const roleFilter = ref('all')
 
   watch(
-    () => statusFilter.value,
+    () => roleFilter.value,
     (newVal) => {
       if (!table?.value?.tableApi) return
 
-      const statusColumn = table.value.tableApi.getColumn('status')
-      if (!statusColumn) return
+      const roleColumn = table.value.tableApi.getColumn('role')
+      if (!roleColumn) return
 
-      if (newVal === 'all') {
-        statusColumn.setFilterValue(undefined)
-      } else {
-        statusColumn.setFilterValue(newVal)
-      }
+      roleColumn.setFilterValue(newVal === 'all' ? undefined : newVal)
     }
   )
 
