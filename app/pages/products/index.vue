@@ -76,35 +76,13 @@
             </template>
           </UPopover>
 
-          <UDropdownMenu
-            :items="
-              table?.tableApi
-                ?.getAllColumns()
-                .filter((column: any) => column.getCanHide())
-                .map((column: any) => ({
-                  label: upperFirst(column.id),
-                  type: 'checkbox' as const,
-                  checked: column.getIsVisible(),
-                  onUpdateChecked(checked: boolean) {
-                    table?.tableApi?.getColumn(column.id)?.toggleVisibility(!!checked)
-                  },
-                  onSelect(e?: Event) {
-                    e?.preventDefault()
-                  }
-                }))
-            "
-            :content="{ align: 'end' }"
-          >
-            <UButton label="Display" color="neutral" variant="outline" trailing-icon="i-lucide-settings-2" />
-          </UDropdownMenu>
         </div>
       </div>
 
       <UTable
         ref="table"
         v-model:column-filters="columnFilters"
-        v-model:column-visibility="columnVisibility"
-        v-model:row-selection="rowSelection"
+      v-model:row-selection="rowSelection"
         class="shrink-0"
         :data="data"
         :columns="columns"
@@ -156,8 +134,7 @@
 
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
-  import { upperFirst } from 'scule'
-  import type { Product } from '~/types'
+import type { Product } from '~/types'
 
   const UBadge = resolveComponent('UBadge')
   const UCheckbox = resolveComponent('UCheckbox')
@@ -171,8 +148,7 @@
   const table = useTemplateRef('table')
 
   const columnFilters = ref<{ id: string; value: unknown }[]>([])
-  const columnVisibility = ref()
-  const rowSelection = ref({})
+const rowSelection = ref({})
 
   const apiFetch = useApiFetch()
   const loading = ref(false)
