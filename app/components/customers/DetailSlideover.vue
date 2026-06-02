@@ -16,7 +16,7 @@
           </div>
         </div>
 
-        <UDivider />
+        <USeparator />
 
         <dl class="space-y-4">
           <div class="flex justify-between gap-4">
