@@ -1,3 +1,62 @@
+<template>
+  <UDashboardPanel id="orders">
+    <template #header>
+      <UDashboardNavbar title="訂單管理">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+      </UDashboardNavbar>
+    </template>
+
+    <template #body>
+      <div class="flex flex-wrap items-center justify-between gap-1.5">
+        <UInput v-model="search" icon="i-lucide-search" placeholder="搜尋訂單編號或買家..." class="max-w-sm" />
+        <USelect
+          v-model="statusFilter"
+          :items="[
+            { label: '全部', value: 'all' },
+            { label: '待確認', value: 'pending' },
+            { label: '已付款', value: 'paid' },
+            { label: '已出貨', value: 'shipped' },
+            { label: '已送達', value: 'delivered' },
+            { label: '已取消', value: 'cancelled' }
+          ]"
+          placeholder="篩選狀態"
+          class="min-w-32"
+        />
+      </div>
+
+      <UTable
+        ref="table"
+        v-model:pagination="pagination"
+        class="shrink-0"
+        :data="filtered"
+        :columns="columns"
+        :loading="status === 'pending'"
+        :ui="{
+          base: 'table-fixed border-separate border-spacing-0',
+          thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+          tbody: '[&>tr]:last:[&>td]:border-b-0',
+          tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors',
+          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+          td: 'border-b border-default'
+        }"
+        @select="(_e: Event, row) => navigateTo(`/orders/${row.original.id}/edit`)"
+      />
+
+      <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
+        <p class="text-sm text-muted">共 {{ filtered.length }} 筆訂單</p>
+        <UPagination
+          :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
+          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
+          :total="filtered.length"
+          @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+        />
+      </div>
+    </template>
+  </UDashboardPanel>
+</template>
+
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
   import type { Order } from '~/types'
@@ -62,78 +121,23 @@
       accessorKey: 'status',
       header: '狀態',
       cell: ({ row }) =>
-        h(UBadge, {
-          variant: 'subtle',
-          color: statusColorMap[row.original.status]
-        }, () => statusLabelMap[row.original.status])
+        h(
+          UBadge,
+          {
+            variant: 'subtle',
+            color: statusColorMap[row.original.status]
+          },
+          () => statusLabelMap[row.original.status]
+        )
     }
   ]
 
   const filtered = computed(() => {
     const orders = ordersRes.value?.data ?? []
-    return orders.filter(o => {
+    return orders.filter((o) => {
       const matchSearch = String(o.id).includes(search.value) || o.recipientName.includes(search.value)
       const matchStatus = statusFilter.value === 'all' || o.status === statusFilter.value
       return matchSearch && matchStatus
     })
   })
 </script>
-
-<template>
-  <UDashboardPanel id="orders">
-    <template #header>
-      <UDashboardNavbar title="訂單管理">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-      </UDashboardNavbar>
-    </template>
-
-    <template #body>
-      <div class="flex flex-wrap items-center justify-between gap-1.5">
-        <UInput v-model="search" icon="i-lucide-search" placeholder="搜尋訂單編號或買家..." class="max-w-sm" />
-        <USelect
-          v-model="statusFilter"
-          :items="[
-            { label: '全部', value: 'all' },
-            { label: '待確認', value: 'pending' },
-            { label: '已付款', value: 'paid' },
-            { label: '已出貨', value: 'shipped' },
-            { label: '已送達', value: 'delivered' },
-            { label: '已取消', value: 'cancelled' }
-          ]"
-          placeholder="篩選狀態"
-          class="min-w-32"
-        />
-      </div>
-
-      <UTable
-        ref="table"
-        v-model:pagination="pagination"
-        class="shrink-0"
-        :data="filtered"
-        :columns="columns"
-        :loading="status === 'pending'"
-        :ui="{
-          base: 'table-fixed border-separate border-spacing-0',
-          thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-          tbody: '[&>tr]:last:[&>td]:border-b-0',
-          tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors',
-          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-          td: 'border-b border-default'
-        }"
-        @select="(_e: Event, row) => navigateTo(`/orders/${row.original.id}/edit`)"
-      />
-
-      <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
-        <p class="text-sm text-muted">共 {{ filtered.length }} 筆訂單</p>
-        <UPagination
-          :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-          :total="filtered.length"
-          @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
-        />
-      </div>
-    </template>
-  </UDashboardPanel>
-</template>
