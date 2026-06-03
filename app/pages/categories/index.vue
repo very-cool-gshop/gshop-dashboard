@@ -227,6 +227,6 @@
     { accessorKey: 'id', header: 'ID', size: 60 },
     { accessorKey: 'name', header: '類別名稱' },
     { accessorKey: 'description', header: '敘述' },
-    { accessorKey: 'sortOrder', header: '排序', size: 80 },
+    { accessorKey: 'sortOrder', header: '排序', size: 80, meta: { class: { th: 'whitespace-nowrap' } } },
   ]
 </script>
