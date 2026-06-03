@@ -93,6 +93,7 @@
                 type="button"
                 :loading="analyzeLoading"
                 :disabled="!selectedImage"
+                :class="selectedImage ? 'cursor-pointer' : 'cursor-default'"
                 @click="analyzeImage"
               />
             </div>
@@ -286,13 +287,14 @@
     if (!selectedImage.value) return
     analyzeLoading.value = true
     try {
-      const result = await apiFetch<{ name: string; price: number; description: string }>('/products/analyze', {
+      const result = await apiFetch<{ name: string; price: number; description: string; categoryId: number }>('/products/analyze', {
         method: 'POST',
         body: { url: selectedImage.value.url }
       })
       state.name = result.name
       state.price = result.price
       state.description = result.description
+      state.categoryId = result.categoryId
       toast.add({ title: 'AI 分析完成', description: '已自動填入商品資訊，請確認後送出', color: 'success' })
     } catch {
       toast.add({ title: '分析失敗', description: '請稍後再試', color: 'error' })
