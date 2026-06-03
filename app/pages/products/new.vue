@@ -77,11 +77,27 @@
         </UPageCard>
 
         <!-- ── 商品圖片 ── -->
-        <UPageCard
-          title="商品圖片"
-          description="建議使用正方形圖片以獲得最佳呈現效果。"
-          variant="subtle"
-        >
+        <UPageCard variant="subtle">
+          <template #header>
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="font-semibold text-sm text-(--ui-text)">商品圖片</p>
+                <p class="text-xs text-(--ui-text-muted) mt-0.5">建議使用正方形圖片以獲得最佳呈現效果。</p>
+              </div>
+              <UButton
+                label="AI 分析圖片"
+                icon="i-lucide-sparkles"
+                color="primary"
+                variant="subtle"
+                size="sm"
+                type="button"
+                :loading="analyzeLoading"
+                :disabled="!selectedImage"
+                @click="analyzeImage"
+              />
+            </div>
+          </template>
+
           <div class="space-y-3">
             <div
               class="flex items-center justify-center w-full h-52 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
@@ -262,6 +278,28 @@
       categoriesLoading.value = false
     }
   })
+
+  // ── AI 分析 ───────────────────────────────────────────
+  const analyzeLoading = ref(false)
+
+  async function analyzeImage() {
+    if (!selectedImage.value) return
+    analyzeLoading.value = true
+    try {
+      const result = await apiFetch<{ name: string; price: number; description: string }>('/products/analyze', {
+        method: 'POST',
+        body: { url: selectedImage.value.url }
+      })
+      state.name = result.name
+      state.price = result.price
+      state.description = result.description
+      toast.add({ title: 'AI 分析完成', description: '已自動填入商品資訊，請確認後送出', color: 'success' })
+    } catch {
+      toast.add({ title: '分析失敗', description: '請稍後再試', color: 'error' })
+    } finally {
+      analyzeLoading.value = false
+    }
+  }
 
   // ── 送出 ──────────────────────────────────────────────
   const toast = useToast()
