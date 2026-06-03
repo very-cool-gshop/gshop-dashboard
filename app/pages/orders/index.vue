@@ -10,7 +10,17 @@
 
     <template #body>
       <div class="flex flex-wrap items-center justify-between gap-1.5">
-        <UInput v-model="search" icon="i-lucide-search" placeholder="搜尋訂單編號或買家..." class="max-w-sm" />
+        <div class="flex items-center gap-1.5 max-w-sm w-full">
+          <UInput v-model="search" icon="i-lucide-search" :placeholder="searchType === 'orderId' ? '搜尋訂單編號...' : '搜尋買家 ID...'" class="flex-1" />
+          <USelect
+            v-model="searchType"
+            :items="[
+              { label: '訂單編號', value: 'orderId' },
+              { label: '買家 ID', value: 'userId' }
+            ]"
+            class="min-w-28"
+          />
+        </div>
         <USelect
           v-model="statusFilter"
           :items="[
@@ -27,12 +37,10 @@
       </div>
 
       <UTable
-        ref="table"
-        v-model:pagination="pagination"
         class="shrink-0"
-        :data="filtered"
+        :data="data"
         :columns="columns"
-        :loading="status === 'pending'"
+        :loading="loading"
         :ui="{
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
@@ -45,12 +53,11 @@
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
-        <p class="text-sm text-muted">共 {{ filtered.length }} 筆訂單</p>
+        <p class="text-sm text-muted">共 {{ total }} 筆訂單</p>
         <UPagination
-          :default-page="(table?.tableApi?.getState().pagination.pageIndex || 0) + 1"
-          :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-          :total="filtered.length"
-          @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+          v-model:page="currentPage"
+          :items-per-page="pageSize"
+          :total="total"
         />
       </div>
     </template>
@@ -63,18 +70,52 @@
 
   const UBadge = resolveComponent('UBadge')
 
-  const table = useTemplateRef('table')
-
   const apiFetch = useApiFetch()
-  const { data: ordersRes, status } = await useAsyncData<{ data: Order[] }>(
-    'orders',
-    () => apiFetch('/orders', { params: { limit: 200 } }),
-    { lazy: true }
-  )
+
+  const loading = ref(false)
+  const data = ref<Order[]>([])
+  const total = ref(0)
+  const currentPage = ref(1)
+  const pageSize = 20
 
   const search = ref('')
+  const searchType = ref<'orderId' | 'userId'>('orderId')
   const statusFilter = ref('all')
-  const pagination = ref({ pageIndex: 0, pageSize: 10 })
+
+  async function fetchOrders() {
+    loading.value = true
+    try {
+      const params: Record<string, unknown> = { page: currentPage.value, limit: pageSize }
+      if (statusFilter.value !== 'all') params.status = statusFilter.value
+      if (search.value) params[searchType.value] = search.value
+
+      const result = await apiFetch<{ total: number; page: number; totalPages: number; data: Order[] }>(
+        '/orders',
+        { params }
+      )
+      data.value = result.data
+      total.value = result.total
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => fetchOrders())
+  watch(currentPage, () => fetchOrders())
+
+  const debouncedFetch = useDebounceFn(() => {
+    currentPage.value = 1
+    fetchOrders()
+  }, 300)
+
+  watch(search, debouncedFetch)
+  watch(searchType, () => {
+    if (search.value) debouncedFetch()
+  })
+  watch(statusFilter, () => {
+    currentPage.value = 1
+    fetchOrders()
+  })
 
   const statusColorMap = {
     pending: 'warning',
@@ -136,13 +177,4 @@
         )
     }
   ]
-
-  const filtered = computed(() => {
-    const orders = ordersRes.value?.data ?? []
-    return orders.filter((o) => {
-      const matchSearch = String(o.id).includes(search.value) || o.recipientName.includes(search.value)
-      const matchStatus = statusFilter.value === 'all' || o.status === statusFilter.value
-      return matchSearch && matchStatus
-    })
-  })
 </script>
