@@ -19,7 +19,7 @@
           type="button"
           @click="uploadInputRef?.click()"
         />
-        <input ref="uploadInputRef" type="file" accept="image/*" class="hidden" @change="onUpload" />
+        <input ref="uploadInputRef" type="file" accept="image/*" multiple class="hidden" @change="onUpload" />
       </div>
 
       <div v-if="loading" class="flex justify-center py-16">
@@ -149,16 +149,16 @@
   watch(page, fetchImages)
 
   async function onUpload(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    if (!file) return
+    const files = (event.target as HTMLInputElement).files
+    if (!files?.length) return
     uploading.value = true
     try {
       const formData = new FormData()
-      formData.append('media', file)
-      const newImage = await apiFetch<ProductImage>('/images', { method: 'POST', body: formData })
-      images.value.unshift(newImage)
-      total.value++
-      pending.value = newImage
+      for (const file of files) formData.append('media', file)
+      const newImages = await apiFetch<ProductImage[]>('/images', { method: 'POST', body: formData })
+      images.value.unshift(...newImages)
+      total.value += newImages.length
+      pending.value = newImages[0] ?? null
     } finally {
       uploading.value = false
       if (uploadInputRef.value) uploadInputRef.value.value = ''
