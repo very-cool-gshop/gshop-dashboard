@@ -65,10 +65,12 @@
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
+          tr: 'cursor-pointer',
           th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default',
           separator: 'h-0'
         }"
+        @select="handleRowSelect"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
@@ -93,16 +95,13 @@
 <script setup lang="ts">
   import type { TableColumn } from '@nuxt/ui'
 import { getPaginationRowModel } from '@tanstack/table-core'
-  import type { Row } from '@tanstack/table-core'
   import type { User } from '~/types'
 
   const UAvatar = resolveComponent('UAvatar')
   const UButton = resolveComponent('UButton')
   const UBadge = resolveComponent('UBadge')
-  const UDropdownMenu = resolveComponent('UDropdownMenu')
   const UCheckbox = resolveComponent('UCheckbox')
 
-  const toast = useToast()
   const table = useTemplateRef('table')
 
   const detailOpen = ref(false)
@@ -129,53 +128,9 @@ import { getPaginationRowModel } from '@tanstack/table-core'
   watchDebounced(searchInput, () => refresh(), { debounce: 400 })
   watch(roleFilter, () => refresh())
 
-  function getRowItems(row: Row<User>) {
-    return [
-      {
-        type: 'label',
-        label: '操作'
-      },
-      {
-        label: '複製客戶 ID',
-        icon: 'i-lucide-copy',
-        onSelect() {
-          navigator.clipboard.writeText(row.original.id.toString())
-          toast.add({
-            title: '已複製到剪貼簿',
-            description: '客戶 ID 已複製到剪貼簿'
-          })
-        }
-      },
-      {
-        type: 'separator'
-      },
-      {
-        label: '查看客戶詳情',
-        icon: 'i-lucide-list',
-        onSelect() {
-          selectedUserId.value = row.original.id
-          detailOpen.value = true
-        }
-      },
-      {
-        label: '查看付款記錄',
-        icon: 'i-lucide-wallet'
-      },
-      {
-        type: 'separator'
-      },
-      {
-        label: '刪除客戶',
-        icon: 'i-lucide-trash',
-        color: 'error',
-        onSelect() {
-          toast.add({
-            title: '客戶已刪除',
-            description: '該客戶已被成功刪除。'
-          })
-        }
-      }
-    ]
+  function handleRowSelect(_e: Event, row: { original: User }) {
+    selectedUserId.value = row.original.id
+    detailOpen.value = true
   }
 
   const columns: TableColumn<User>[] = [
@@ -230,31 +185,6 @@ import { getPaginationRowModel } from '@tanstack/table-core'
         }[row.original.role]
 
         return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () => row.original.role)
-      }
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        return h(
-          'div',
-          { class: 'text-right' },
-          h(
-            UDropdownMenu,
-            {
-              content: {
-                align: 'end'
-              },
-              items: getRowItems(row)
-            },
-            () =>
-              h(UButton, {
-                icon: 'i-lucide-ellipsis-vertical',
-                color: 'neutral',
-                variant: 'ghost',
-                class: 'ml-auto'
-              })
-          )
-        )
       }
     }
   ]

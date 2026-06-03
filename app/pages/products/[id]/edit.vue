@@ -90,24 +90,24 @@
           <div class="space-y-3">
             <div
               class="flex items-center justify-center w-full h-52 border-2 border-dashed rounded-lg cursor-pointer transition-colors"
-              :class="imagePreview ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
-              @click="fileInputRef?.click()"
-              @dragover.prevent
-              @drop.prevent="onDrop"
+              :class="selectedImage ? 'border-(--ui-border)' : 'border-(--ui-border) hover:border-(--ui-border-accented)'"
+              @click="imagePickerOpen = true"
             >
-              <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-contain rounded-lg" />
+              <img v-if="selectedImage" :src="selectedImage.url" class="w-full h-full object-contain rounded-lg" />
               <div v-else class="flex flex-col items-center gap-2 text-(--ui-text-muted) select-none">
                 <UIcon name="i-lucide-image-plus" class="w-10 h-10 opacity-50" />
-                <span class="text-sm">點擊或拖曳圖片至此上傳</span>
+                <span class="text-sm">點擊選擇圖片</span>
               </div>
             </div>
-            <input ref="fileInputRef" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-            <div v-if="imagePreview" class="flex gap-2">
-              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="fileInputRef?.click()" />
-              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="removeImage" />
+            <div v-if="selectedImage" class="flex gap-2">
+              <UButton label="更換圖片" icon="i-lucide-refresh-cw" color="neutral" variant="outline" size="sm" type="button" @click="imagePickerOpen = true" />
+              <UButton label="移除" icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" type="button" @click="selectedImage = null" />
             </div>
           </div>
         </UPageCard>
+
+        <ProductImagePickerModal v-model:open="imagePickerOpen" @select="selectedImage = $event" />
+        <ProductImagePickerModal v-model:open="variantPickerOpen" @select="onVariantImageSelect($event)" />
 
         <!-- ── 商品規格 ── -->
         <UPageCard variant="subtle">
@@ -146,18 +146,11 @@
               <div class="w-16 shrink-0">
                 <div
                   class="w-16 h-16 rounded-md border border-dashed border-(--ui-border) cursor-pointer flex items-center justify-center overflow-hidden hover:border-(--ui-border-accented) transition-colors"
-                  @click="variantFileRefs[index]?.click()"
+                  @click="openVariantPicker(index)"
                 >
-                  <img v-if="variant.imagePreview" :src="variant.imagePreview" class="w-full h-full object-cover" />
+                  <img v-if="variant.imageUrl" :src="variant.imageUrl" class="w-full h-full object-cover" />
                   <UIcon v-else name="i-lucide-image" class="w-4 h-4 text-(--ui-text-muted)" />
                 </div>
-                <input
-                  :ref="el => { if (el) variantFileRefs[index] = el as HTMLInputElement }"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="onVariantFileChange($event, index)"
-                />
               </div>
               <UInput v-model="variant.name" placeholder="例：S / 紅色" class="flex-1" />
               <UInput v-model.number="variant.price" type="number" placeholder="0" class="w-32" />
@@ -181,8 +174,6 @@
   import type { FormSubmitEvent } from '@nuxt/ui'
   import type { ProductVariant } from '~/types'
 
-  // price 欄位後端回傳字串（"123.00"），需轉 Number
-
   const route = useRoute()
   const productId = route.params.id as string
 
@@ -205,50 +196,48 @@
   })
 
   // ── 圖片 ──────────────────────────────────────────────
-  const fileInputRef = ref<HTMLInputElement | null>(null)
-  const imagePreview = ref<string | null>(null)
-  const imageFile = ref<File | null>(null)
-
-  function onFileChange(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    if (file) loadPreview(file)
+  interface ProductImage {
+    id: number
+    url: string
+    filename?: string
+    size?: number
   }
 
-  function onDrop(event: DragEvent) {
-    const file = event.dataTransfer?.files?.[0]
-    if (file && file.type.startsWith('image/')) loadPreview(file)
-  }
-
-  function loadPreview(file: File) {
-    imageFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => { imagePreview.value = e.target?.result as string }
-    reader.readAsDataURL(file)
-  }
-
-  function removeImage() {
-    imagePreview.value = null
-    imageFile.value = null
-    if (fileInputRef.value) fileInputRef.value.value = ''
-  }
+  const imagePickerOpen = ref(false)
+  const selectedImage = ref<ProductImage | null>(null)
 
   // ── 規格 ──────────────────────────────────────────────
   interface VariantDraft {
-    id?: number            // undefined = 新規格
+    id?: number
     name: string
     price: number | null
     stock: number
-    imageFile: File | null
-    imagePreview: string | null
+    imageId: number | null
+    imageUrl: string | null
   }
 
   const productForm = useTemplateRef('productForm')
   const variants = ref<VariantDraft[]>([])
-  const variantFileRefs = ref<HTMLInputElement[]>([])
   const deletedVariantIds = ref<number[]>([])
 
+  const variantPickerOpen = ref(false)
+  const activeVariantIndex = ref(-1)
+
+  function openVariantPicker(index: number) {
+    activeVariantIndex.value = index
+    variantPickerOpen.value = true
+  }
+
+  function onVariantImageSelect(image: ProductImage) {
+    const variant = variants.value[activeVariantIndex.value]
+    if (variant) {
+      variant.imageId = image.id
+      variant.imageUrl = image.url
+    }
+  }
+
   function addVariant() {
-    variants.value.push({ name: '', price: null, stock: 0, imageFile: null, imagePreview: null })
+    variants.value.push({ name: '', price: null, stock: 0, imageId: null, imageUrl: null })
   }
 
   function removeVariant(index: number) {
@@ -257,16 +246,6 @@
       deletedVariantIds.value.push(variant.id)
     }
     variants.value.splice(index, 1)
-  }
-
-  function onVariantFileChange(event: Event, index: number) {
-    const file = (event.target as HTMLInputElement).files?.[0]
-    const variant = variants.value[index]
-    if (!file || !variant) return
-    variant.imageFile = file
-    const reader = new FileReader()
-    reader.onload = (e) => { variant.imagePreview = e.target?.result as string }
-    reader.readAsDataURL(file)
   }
 
   // ── 分類 ──────────────────────────────────────────────
@@ -310,8 +289,8 @@
     state.price = Number(product.price)
     state.status = product.status
 
-    if (product.image?.url) {
-      imagePreview.value = product.image.url
+    if (product.image) {
+      selectedImage.value = { id: product.image.id, url: product.image.url }
     }
 
     variants.value = product.ProductVariants.map(v => ({
@@ -319,8 +298,8 @@
       name: v.name,
       price: Number(v.price),
       stock: v.stock,
-      imageFile: null,
-      imagePreview: v.image?.url ?? null
+      imageId: v.image?.id ?? null,
+      imageUrl: v.image?.url ?? null
     }))
   }
 
@@ -339,16 +318,6 @@
   async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = true
     try {
-      // 1. 有新圖片時先上傳，取得 imageId
-      let imageId: number | undefined
-      if (imageFile.value) {
-        const imgFormData = new FormData()
-        imgFormData.append('image', imageFile.value)
-        const uploaded = await apiFetch<{ id: number }>('/images', { method: 'POST', body: imgFormData })
-        imageId = uploaded.id
-      }
-
-      // 2. 以 JSON 更新商品基本資料
       await apiFetch(`/products/${productId}`, {
         method: 'PATCH',
         body: {
@@ -357,11 +326,10 @@
           description: event.data.description ?? '',
           price: event.data.price,
           status: event.data.status,
-          ...(imageId !== undefined && { imageId }),
+          imageId: selectedImage.value?.id ?? null,
         },
       })
 
-      // 3. 刪除移除的規格
       await Promise.all(
         deletedVariantIds.value.map(variantId =>
           apiFetch(`/products/${productId}/variants/${variantId}`, { method: 'DELETE' })
@@ -369,23 +337,14 @@
       )
       deletedVariantIds.value = []
 
-      // 4. 新增 / 更新規格
       const validVariants = variants.value.filter(v => v.name.trim() && v.price !== null && v.price > 0)
       await Promise.all(
-        validVariants.map(async v => {
-          let variantImageId: number | undefined
-          if (v.imageFile) {
-            const variantImgFormData = new FormData()
-            variantImgFormData.append('image', v.imageFile)
-            const uploaded = await apiFetch<{ id: number }>('/images', { method: 'POST', body: variantImgFormData })
-            variantImageId = uploaded.id
-          }
-
+        validVariants.map(v => {
           const body = {
             name: v.name.trim(),
             price: v.price,
             stock: v.stock ?? 0,
-            ...(variantImageId !== undefined && { imageId: variantImageId }),
+            imageId: v.imageId ?? null,
           }
 
           if (v.id !== undefined) {
