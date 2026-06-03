@@ -96,7 +96,12 @@
     {
       accessorKey: 'id',
       header: '訂單編號',
-      cell: ({ row }) => h('span', { class: 'font-mono font-medium' }, `#${row.original.id}`)
+      cell: ({ row }) => h('span', { class: 'font-mono font-medium' }, row.original.id)
+    },
+    {
+      accessorKey: 'userId',
+      header: '用戶 ID',
+      cell: ({ row }) => h('span', { class: 'font-mono text-muted' }, row.original.userId)
     },
     {
       accessorKey: 'recipientName',
