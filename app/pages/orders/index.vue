@@ -46,7 +46,7 @@
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
           tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors',
-          th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+          th: 'py-2 whitespace-nowrap first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default'
         }"
         @select="(_e: Event, row) => navigateTo(`/orders/${row.original.id}/edit`)"
