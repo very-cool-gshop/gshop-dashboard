@@ -64,20 +64,6 @@
             }
           },
           {
-            label: '成員',
-            to: '/settings/members',
-            onSelect: () => {
-              open.value = false
-            }
-          },
-          {
-            label: '通知',
-            to: '/settings/notifications',
-            onSelect: () => {
-              open.value = false
-            }
-          },
-          {
             label: '安全性',
             to: '/settings/security',
             onSelect: () => {

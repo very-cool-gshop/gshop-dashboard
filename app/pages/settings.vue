@@ -33,16 +33,6 @@
         exact: true
       },
       {
-        label: '成員',
-        icon: 'i-lucide-users',
-        to: '/settings/members'
-      },
-      {
-        label: '通知',
-        icon: 'i-lucide-bell',
-        to: '/settings/notifications'
-      },
-      {
         label: '安全性',
         icon: 'i-lucide-shield',
         to: '/settings/security'
