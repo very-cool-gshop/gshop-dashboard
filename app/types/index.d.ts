@@ -114,6 +114,27 @@ export interface Order {
   User?: { id: number; username: string; email: string }
 }
 
+export interface DashboardSnapshot {
+  date: string
+  revenue: number | string
+  orderCount: number
+  newUserCount: number
+  avgOrderValue: number | string
+  orderStatusDist: Record<string, number>
+  topProducts: { productId: number; productName: string; totalRevenue: number; totalQuantity: number }[]
+  topCategories: { categoryId: number; categoryName: string; totalRevenue: number; totalQuantity: number }[]
+  paymentMethods: { method: string; count: number; amount: number }[]
+}
+
+export interface LowStockItem {
+  variantId: number
+  variantName: string
+  stock: number
+  productId: number
+  productName: string
+  productStatus: ProductStatus
+}
+
 export type Period = 'daily' | 'weekly' | 'monthly'
 
 export interface Range {

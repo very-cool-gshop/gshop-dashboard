@@ -1,3 +1,8 @@
+<script setup lang="ts">
+  import type { Period, Range, DashboardSnapshot } from '~/types'
+  defineProps<{ period: Period; range: Range; snapshots: DashboardSnapshot[] }>()
+</script>
+
 <template>
   <UCard class="shrink-0" :ui="{ body: 'px-0! pt-0! pb-3!' }">
     <template #header>

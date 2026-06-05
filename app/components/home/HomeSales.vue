@@ -1,121 +1,83 @@
+<template>
+  <UCard>
+    <template #header>
+      <p class="text-xs text-muted uppercase">熱銷商品</p>
+    </template>
+
+    <UTable
+      :data="data"
+      :columns="columns"
+      class="shrink-0"
+      :ui="{
+        base: 'table-fixed border-separate border-spacing-0',
+        thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+        tbody: '[&>tr]:last:[&>td]:border-b-0',
+        th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+        td: 'border-b border-default'
+      }"
+    />
+  </UCard>
+</template>
+
 <script setup lang="ts">
-  import { h, resolveComponent } from 'vue'
+  import { h } from 'vue'
   import type { TableColumn } from '@nuxt/ui'
-  import type { Period, Range, Sale } from '~/types'
+  import type { Period, Range, DashboardSnapshot } from '~/types'
 
   const props = defineProps<{
     period: Period
     range: Range
+    snapshots: DashboardSnapshot[]
   }>()
 
-  const UBadge = resolveComponent('UBadge')
+  type TopProduct = {
+    productId: number
+    productName: string
+    totalRevenue: number
+    totalQuantity: number
+  }
 
-  const sampleEmails = [
-    'james.anderson@example.com',
-    'mia.white@example.com',
-    'william.brown@example.com',
-    'emma.davis@example.com',
-    'ethan.harris@example.com'
-  ]
+  const data = computed<TopProduct[]>(() => {
+    const start = props.range.start.toISOString().slice(0, 10)
+    const end = props.range.end.toISOString().slice(0, 10)
 
-  const { data } = await useAsyncData(
-    'sales',
-    async () => {
-      const sales: Sale[] = []
-      const currentDate = new Date()
-
-      for (let i = 0; i < 5; i++) {
-        const hoursAgo = randomInt(0, 48)
-        const date = new Date(currentDate.getTime() - hoursAgo * 3600000)
-
-        sales.push({
-          id: (4600 - i).toString(),
-          date: date.toISOString(),
-          status: randomFrom(['paid', 'failed', 'refunded']),
-          email: randomFrom(sampleEmails),
-          amount: randomInt(100, 1000)
-        })
+    const map = new Map<number, TopProduct>()
+    for (const snapshot of props.snapshots) {
+      if (snapshot.date < start || snapshot.date > end) continue
+      for (const p of snapshot.topProducts) {
+        const existing = map.get(p.productId)
+        if (existing) {
+          existing.totalRevenue += p.totalRevenue
+          existing.totalQuantity += p.totalQuantity
+        } else {
+          map.set(p.productId, { ...p })
+        }
       }
-
-      return sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    },
-    {
-      watch: [() => props.period, () => props.range],
-      default: () => []
     }
-  )
 
-  const columns: TableColumn<Sale>[] = [
+    return [...map.values()].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10)
+  })
+
+  const formatCurrency = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0
+  }).format
+
+  const columns: TableColumn<TopProduct>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      cell: ({ row }) => `#${row.getValue('id')}`
+      accessorKey: 'productName',
+      header: '商品名稱'
     },
     {
-      accessorKey: 'date',
-      header: '日期',
-      cell: ({ row }) => {
-        return new Date(row.getValue('date')).toLocaleString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-      }
+      accessorKey: 'totalQuantity',
+      header: '銷量',
+      cell: ({ row }) => `${row.getValue('totalQuantity')} 件`
     },
     {
-      accessorKey: 'status',
-      header: '狀態',
-      cell: ({ row }) => {
-        const status = row.getValue('status') as string
-        const color = {
-          paid: 'success' as const,
-          failed: 'error' as const,
-          refunded: 'neutral' as const
-        }[status]
-
-        const label = {
-          paid: '已付款',
-          failed: '失敗',
-          refunded: '已退款'
-        }[status] ?? status
-
-        return h(UBadge, { variant: 'subtle', color }, () => label)
-      }
-    },
-    {
-      accessorKey: 'email',
-      header: '信箱'
-    },
-    {
-      accessorKey: 'amount',
-      header: () => h('div', { class: 'text-right' }, '金額'),
-      cell: ({ row }) => {
-        const amount = Number.parseFloat(row.getValue('amount'))
-
-        const formatted = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'EUR'
-        }).format(amount)
-
-        return h('div', { class: 'text-right font-medium' }, formatted)
-      }
+      accessorKey: 'totalRevenue',
+      header: () => h('div', { class: 'text-right' }, '營收'),
+      cell: ({ row }) => h('div', { class: 'text-right font-medium' }, formatCurrency(row.getValue('totalRevenue')))
     }
   ]
 </script>
-
-<template>
-  <UTable
-    :data="data"
-    :columns="columns"
-    class="shrink-0"
-    :ui="{
-      base: 'table-fixed border-separate border-spacing-0',
-      thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-      tbody: '[&>tr]:last:[&>td]:border-b-0',
-      th: 'first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-      td: 'border-b border-default'
-    }"
-  />
-</template>

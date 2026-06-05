@@ -1,3 +1,13 @@
+<template>
+  <UApp>
+    <NuxtLoadingIndicator />
+
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </UApp>
+</template>
+
 <script setup lang="ts">
   const colorMode = useColorMode()
 
@@ -28,13 +38,3 @@
     twitterCard: 'summary_large_image'
   })
 </script>
-
-<template>
-  <UApp>
-    <NuxtLoadingIndicator />
-
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-  </UApp>
-</template>

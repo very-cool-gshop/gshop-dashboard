@@ -1,75 +1,52 @@
 <script setup lang="ts">
-  import type { Period, Range, Stat } from '~/types'
+  import type { Period, Range, DashboardSnapshot, Stat } from '~/types'
 
   const props = defineProps<{
     period: Period
     range: Range
+    snapshots: DashboardSnapshot[]
   }>()
 
-  function formatCurrency(value: number): string {
-    return value.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    })
-  }
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
 
-  const baseStats = [
-    {
-      title: '客戶數',
-      icon: 'i-lucide-users',
-      minValue: 400,
-      maxValue: 1000,
-      minVariation: -15,
-      maxVariation: 25
-    },
-    {
-      title: '客單價',
-      icon: 'i-lucide-chart-pie',
-      minValue: 1000,
-      maxValue: 2000,
-      minVariation: -10,
-      maxVariation: 20
-    },
-    {
-      title: '營收',
-      icon: 'i-lucide-circle-dollar-sign',
-      minValue: 200000,
-      maxValue: 500000,
-      minVariation: -20,
-      maxVariation: 30,
-      formatter: formatCurrency
-    },
-    {
-      title: '訂單數',
-      icon: 'i-lucide-shopping-cart',
-      minValue: 100,
-      maxValue: 300,
-      minVariation: -5,
-      maxVariation: 15
-    }
-  ]
+  const pctChange = (curr: number, prev: number) =>
+    prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0
 
-  const { data: stats } = await useAsyncData<Stat[]>(
-    'stats',
-    async () => {
-      return baseStats.map((stat) => {
-        const value = randomInt(stat.minValue, stat.maxValue)
-        const variation = randomInt(stat.minVariation, stat.maxVariation)
+  const toNum = (v: number | string) => parseFloat(String(v)) || 0
 
-        return {
-          title: stat.title,
-          icon: stat.icon,
-          value: stat.formatter ? stat.formatter(value) : value,
-          variation
-        }
-      })
-    },
-    {
-      watch: [() => props.period, () => props.range],
-      default: () => []
-    }
-  )
+  const stats = computed<Stat[]>(() => {
+    const start = props.range.start.toISOString().slice(0, 10)
+    const end = props.range.end.toISOString().slice(0, 10)
+
+    const current = props.snapshots.filter(s => s.date >= start && s.date <= end)
+    const previous = props.snapshots.filter(s => s.date < start)
+
+    const sum = (rows: DashboardSnapshot[], key: 'orderCount' | 'newUserCount') =>
+      rows.reduce((acc, r) => acc + r[key], 0)
+
+    const sumRevenue = (rows: DashboardSnapshot[]) =>
+      rows.reduce((acc, r) => acc + toNum(r.revenue), 0)
+
+    const avgAov = (rows: DashboardSnapshot[]) =>
+      rows.length > 0 ? rows.reduce((acc, r) => acc + toNum(r.avgOrderValue), 0) / rows.length : 0
+
+    const curRevenue = sumRevenue(current)
+    const prevRevenue = sumRevenue(previous)
+    const curOrders = sum(current, 'orderCount')
+    const prevOrders = sum(previous, 'orderCount')
+    const curUsers = sum(current, 'newUserCount')
+    const prevUsers = sum(previous, 'newUserCount')
+    const curAov = avgAov(current)
+    const prevAov = avgAov(previous)
+
+    return [
+      { title: '新客戶', icon: 'i-lucide-users', value: curUsers, variation: pctChange(curUsers, prevUsers) },
+      { title: '客單價', icon: 'i-lucide-chart-pie', value: formatCurrency(curAov), variation: pctChange(curAov, prevAov) },
+      { title: '營收', icon: 'i-lucide-circle-dollar-sign', value: formatCurrency(curRevenue), variation: pctChange(curRevenue, prevRevenue) },
+      { title: '訂單數', icon: 'i-lucide-shopping-cart', value: curOrders, variation: pctChange(curOrders, prevOrders) },
+    ]
+  })
 </script>
 
 <template>

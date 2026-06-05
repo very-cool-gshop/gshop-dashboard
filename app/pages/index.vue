@@ -32,9 +32,9 @@
     </template>
 
     <template #body>
-      <HomeStats :period="period" :range="range" />
-      <HomeChart :period="period" :range="range" />
-      <HomeSales :period="period" :range="range" />
+      <HomeStats :period="period" :range="range" :snapshots="snapshots ?? []" />
+      <HomeChart :period="period" :range="range" :snapshots="snapshots ?? []" />
+      <HomeSales :period="period" :range="range" :snapshots="snapshots ?? []" />
     </template>
   </UDashboardPanel>
 </template>
@@ -42,9 +42,10 @@
 <script setup lang="ts">
   import { sub } from 'date-fns'
   import type { DropdownMenuItem } from '@nuxt/ui'
-  import type { Period, Range } from '~/types'
+  import type { Period, Range, DashboardSnapshot } from '~/types'
 
   const { isNotificationsSlideoverOpen } = useDashboard()
+  const apiFetch = useApiFetch()
 
   const items = [
     [
@@ -61,4 +62,14 @@
     end: new Date()
   })
   const period = ref<Period>('daily')
+
+  const days = computed(() =>
+    Math.ceil((range.value.end.getTime() - range.value.start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  )
+
+  const { data: snapshots } = await useAsyncData<DashboardSnapshot[]>(
+    'dashboard',
+    () => apiFetch('/dashboard', { params: { days: days.value * 2 } }),
+    { watch: [range], default: () => [] }
+  )
 </script>
