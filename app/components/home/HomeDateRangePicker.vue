@@ -9,12 +9,10 @@
   const selected = defineModel<Range>({ required: true })
 
   const ranges = [
-    { label: '最近 7 天', days: 7 },
-    { label: '最近 14 天', days: 14 },
-    { label: '最近 30 天', days: 30 },
-    { label: '最近 3 個月', months: 3 },
-    { label: '最近 6 個月', months: 6 },
-    { label: '最近 1 年', years: 1 }
+    { label: '近一週', days: 7 },
+    { label: '近一個月', months: 1 },
+    { label: '近三個月', months: 3 },
+    { label: '近六個月', months: 6 }
   ]
 
   const toCalendarDate = (date: Date) => {

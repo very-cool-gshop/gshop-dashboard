@@ -1,75 +1,81 @@
 <template>
   <UDashboardPanel id="home">
     <template #header>
-      <UDashboardNavbar title="首頁" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar title="數據總覽">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-
         <template #right>
-          <UTooltip text="通知" :shortcuts="['N']">
-            <UButton color="neutral" variant="ghost" square @click="isNotificationsSlideoverOpen = true">
-              <UChip color="error" inset>
-                <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
-              </UChip>
-            </UButton>
-          </UTooltip>
-
-          <UDropdownMenu :items="items">
-            <UButton icon="i-lucide-plus" size="md" class="rounded-full" />
-          </UDropdownMenu>
+          <USelect
+            v-model="selectedPeriod"
+            :items="periodOptions"
+            :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
+            class="w-28"
+          />
         </template>
       </UDashboardNavbar>
-
-      <UDashboardToolbar>
-        <template #left>
-          <!-- NOTE: The `-ms-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
-          <HomeDateRangePicker v-model="range" class="-ms-1" />
-
-          <HomePeriodSelect v-model="period" :range="range" />
-        </template>
-      </UDashboardToolbar>
     </template>
 
     <template #body>
-      <HomeStats :period="period" :range="range" :snapshots="snapshots ?? []" />
-      <HomeChart :period="period" :range="range" :snapshots="snapshots ?? []" />
-      <HomeSales :period="period" :range="range" :snapshots="snapshots ?? []" />
+      <div v-if="status === 'pending'" class="flex items-center justify-center py-20">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-muted" />
+      </div>
+
+      <template v-else-if="snapshots">
+        <HomeStats :snapshots="snapshots" :period="period" :range="range" />
+
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <HomeRevenueChart class="lg:col-span-2" :snapshots="snapshots" :period="period" :range="range" />
+          <HomeStatusChart :snapshots="snapshots" :period="period" :range="range" />
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+          <HomeSales :snapshots="snapshots" :period="period" :range="range" />
+          <HomePaymentChart :snapshots="snapshots" :period="period" :range="range" />
+        </div>
+      </template>
     </template>
   </UDashboardPanel>
 </template>
 
 <script setup lang="ts">
-  import { sub } from 'date-fns'
-  import type { DropdownMenuItem } from '@nuxt/ui'
-  import type { Period, Range, DashboardSnapshot } from '~/types'
+import type { Period, Range, DashboardSnapshot } from '~/types'
 
-  const { isNotificationsSlideoverOpen } = useDashboard()
-  const apiFetch = useApiFetch()
+const apiFetch = useApiFetch()
 
-  const items = [
-    [
-{
-        label: '新增客戶',
-        icon: 'i-lucide-user-plus',
-        to: '/customers'
-      }
-    ]
-  ] satisfies DropdownMenuItem[][]
+const periodOptions = [
+  { label: '近一週', value: 'week' },
+  { label: '近一個月', value: 'month' },
+  { label: '近三個月', value: '3months' },
+  { label: '近六個月', value: '6months' },
+]
 
-  const range = shallowRef<Range>({
-    start: sub(new Date(), { days: 14 }),
-    end: new Date()
-  })
-  const period = ref<Period>('daily')
+const selectedPeriod = ref('month')
 
-  const days = computed(() =>
-    Math.ceil((range.value.end.getTime() - range.value.start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  )
+const range = computed<Range>(() => {
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  if (selectedPeriod.value === 'week') start.setDate(start.getDate() - 6)
+  else if (selectedPeriod.value === 'month') start.setMonth(start.getMonth() - 1)
+  else if (selectedPeriod.value === '3months') start.setMonth(start.getMonth() - 3)
+  else start.setMonth(start.getMonth() - 6)
+  return { start, end }
+})
 
-  const { data: snapshots } = await useAsyncData<DashboardSnapshot[]>(
-    'dashboard',
-    () => apiFetch('/dashboard', { params: { days: days.value * 2 } }),
-    { watch: [range], default: () => [] }
-  )
+const period = computed<Period>(() =>
+  selectedPeriod.value === 'week' || selectedPeriod.value === 'month' ? 'daily' : 'weekly',
+)
+
+const apiDays = computed(() => {
+  const diff = Math.ceil((new Date().getTime() - range.value.start.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.min(Math.max(diff + 1, 7), 365)
+})
+
+const { data: snapshots, status } = await useAsyncData<DashboardSnapshot[]>(
+  'dashboard',
+  () => apiFetch('/dashboard', { params: { days: apiDays.value } }),
+  { lazy: true, watch: [apiDays] },
+)
 </script>
