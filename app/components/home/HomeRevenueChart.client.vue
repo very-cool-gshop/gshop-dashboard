@@ -2,7 +2,7 @@
   <UCard :ui="{ body: 'p-4!' }">
     <template #header>
       <div>
-        <p class="text-xs text-muted uppercase">收入 / 訂單趨勢</p>
+        <p class="text-xs text-muted uppercase">收入 / 訂單</p>
         <p class="mt-1 text-2xl font-semibold text-highlighted">
           {{ formatCurrency(totalRevenue) }}
         </p>
@@ -118,8 +118,8 @@ function buildChart() {
           callbacks: {
             label: ctx =>
               ctx.datasetIndex === 0
-                ? ` 收入: ${formatCurrency(ctx.parsed.y)}`
-                : ` 訂單: ${ctx.parsed.y}`,
+                ? ` 收入: ${formatCurrency(ctx.parsed.y ?? 0)}`
+                : ` 訂單: ${ctx.parsed.y ?? 0}`,
           },
         },
       },

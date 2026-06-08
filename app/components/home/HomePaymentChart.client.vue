@@ -55,7 +55,7 @@ function buildChart() {
   chartInstance = new Chart(canvasEl.value, {
     type: 'bar',
     data: {
-      labels: payData.value.map(([m]) => m),
+      labels: payData.value.map(([m]) => formatPaymentMethod(m)),
       datasets: [{
         label: '金額',
         data: payData.value.map(([, d]) => d.amount),
