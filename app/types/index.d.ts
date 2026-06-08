@@ -141,3 +141,20 @@ export interface Range {
   start: Date
   end: Date
 }
+
+export interface Job {
+  name: string
+  schedule: string
+  lastRun: string | null
+  lastStatus: 'success' | 'error' | null
+  lastMessage: string | null
+}
+
+export interface JobLog {
+  id: number
+  jobName: string
+  status: 'success' | 'error'
+  message: string | null
+  duration: number | null
+  createdAt: string
+}

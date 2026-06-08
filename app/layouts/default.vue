@@ -49,6 +49,14 @@
         }
       },
       {
+        label: '排程任務',
+        icon: 'i-lucide-clock',
+        to: '/jobs',
+        onSelect: () => {
+          open.value = false
+        }
+      },
+      {
         label: '設定',
         to: '/settings',
         icon: 'i-lucide-settings',
