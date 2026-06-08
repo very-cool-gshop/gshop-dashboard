@@ -127,6 +127,48 @@
 
   onMounted(() => refresh())
 
+  function parseCron(expr: string): string {
+    const [min, hour, dom, month, dow] = expr.trim().split(/\s+/)
+
+    // 每分鐘
+    if (expr === '* * * * *') return '每分鐘'
+
+    // 每 n 分鐘
+    if (min?.startsWith('*/') && hour === '*' && dom === '*' && month === '*' && dow === '*') {
+      return `每 ${min.slice(2)} 分鐘`
+    }
+
+    // 每小時第 n 分
+    if (hour === '*' && dom === '*' && month === '*' && dow === '*' && !min?.includes('*') && !min?.includes('/')) {
+      return min === '0' ? '每小時整點' : `每小時 ${min} 分`
+    }
+
+    // 每天 hh:mm（指定時分，dom/month/dow 全 *）
+    if (dom === '*' && month === '*' && dow === '*' && !min?.includes('*') && !hour?.includes('*')) {
+      const h = hour!.padStart(2, '0')
+      const m = min!.padStart(2, '0')
+      return `每天 ${h}:${m}`
+    }
+
+    // 每週幾 hh:mm
+    if (dom === '*' && month === '*' && dow !== '*' && !min?.includes('*') && !hour?.includes('*')) {
+      const days = ['日', '一', '二', '三', '四', '五', '六']
+      const dayLabel = dow!.split(',').map(d => `週${days[Number(d)]}`).join('、')
+      const h = hour!.padStart(2, '0')
+      const m = min!.padStart(2, '0')
+      return `每${dayLabel} ${h}:${m}`
+    }
+
+    // 每月幾號 hh:mm
+    if (dom !== '*' && month === '*' && dow === '*' && !min?.includes('*') && !hour?.includes('*')) {
+      const h = hour!.padStart(2, '0')
+      const m = min!.padStart(2, '0')
+      return `每月 ${dom} 號 ${h}:${m}`
+    }
+
+    return expr
+  }
+
   function formatDuration(ms: number | null) {
     if (ms === null) return '-'
     if (ms < 1000) return `${ms}ms`
@@ -150,7 +192,10 @@
     {
       accessorKey: 'schedule',
       header: 'Cron 排程',
-      cell: ({ row }) => h('span', { class: 'font-mono text-sm text-muted' }, row.original.schedule)
+      cell: ({ row }) => h('div', { class: 'flex flex-col' }, [
+        h('span', { class: 'text-sm' }, parseCron(row.original.schedule)),
+        h('span', { class: 'font-mono text-xs text-muted' }, row.original.schedule),
+      ])
     },
     {
       accessorKey: 'lastRun',
