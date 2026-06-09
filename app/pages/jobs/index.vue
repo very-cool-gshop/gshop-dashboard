@@ -24,6 +24,7 @@
         :columns="jobColumns"
         :loading="jobsLoading"
         :ui="{
+          root: 'relative overflow-visible',
           base: 'table-fixed border-separate border-spacing-0',
           thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
           tbody: '[&>tr]:last:[&>td]:border-b-0',
