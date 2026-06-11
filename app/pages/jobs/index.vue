@@ -18,6 +18,7 @@
     </template>
 
     <template #body>
+      <ClientOnly>
       <!-- Jobs List -->
       <UTable
         :data="jobs"
@@ -42,7 +43,7 @@
             :items="logFilterItems"
             placeholder="全部任務"
             class="min-w-44"
-            @update:model-value="fetchLogs"
+            @update:model-value="onFilterChange"
           />
         </div>
 
@@ -58,7 +59,17 @@
             td: 'border-b border-default'
           }"
         />
+
+        <div v-if="logsTotal > 10" class="flex justify-center mt-4">
+          <UPagination
+            v-model:page="logsPage"
+            :total="logsTotal"
+            :items-per-page="10"
+            @update:page="fetchLogs"
+          />
+        </div>
       </div>
+      </ClientOnly>
     </template>
   </UDashboardPanel>
 </template>
@@ -78,6 +89,8 @@
   const logs = ref<JobLog[]>([])
   const logsLoading = ref(false)
   const logJobFilter = ref<string | null>(null)
+  const logsPage = ref(1)
+  const logsTotal = ref(0)
   const runningJob = ref<string | null>(null)
 
   const logFilterItems = computed(() => [
@@ -94,12 +107,19 @@
     }
   }
 
+  function onFilterChange() {
+    logsPage.value = 1
+    fetchLogs()
+  }
+
   async function fetchLogs() {
     logsLoading.value = true
     try {
-      const params: Record<string, unknown> = { limit: 50 }
+      const params: Record<string, unknown> = { limit: 10, page: logsPage.value }
       if (logJobFilter.value) params.jobName = logJobFilter.value
-      logs.value = await apiFetch<JobLog[]>('/admin/jobs/logs', { params })
+      const res = await apiFetch<{ total: number; page: number; totalPages: number; data: JobLog[] }>('/admin/jobs/logs', { params })
+      logs.value = res.data
+      logsTotal.value = res.total
     } finally {
       logsLoading.value = false
     }
