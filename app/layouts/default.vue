@@ -136,6 +136,5 @@
 
     <slot />
 
-    <NotificationsSlideover />
   </UDashboardGroup>
 </template>
