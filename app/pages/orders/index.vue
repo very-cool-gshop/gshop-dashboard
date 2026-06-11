@@ -156,7 +156,12 @@
     {
       accessorKey: 'createdAt',
       header: '日期',
-      cell: ({ row }) => row.original.createdAt.slice(0, 10)
+      cell: ({ row }) => {
+        const d = new Date(row.original.createdAt)
+        const date = d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })
+        const time = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })
+        return `${date} ${time}`
+      }
     },
     {
       accessorKey: 'totalAmount',

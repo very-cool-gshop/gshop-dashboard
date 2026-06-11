@@ -161,7 +161,12 @@
 
     // 每小時第 n 分
     if (hour === '*' && dom === '*' && month === '*' && dow === '*' && !min?.includes('*') && !min?.includes('/')) {
-      return min === '0' ? '每小時整點' : `每小時 ${min} 分`
+      return min === '0' ? '每小時' : `每小時 ${min} 分`
+    }
+
+    // 每 n 小時（整點）
+    if (hour?.startsWith('*/') && dom === '*' && month === '*' && dow === '*' && !min?.includes('*') && !min?.includes('/')) {
+      return min === '0' ? `每 ${hour.slice(2)} 小時` : `每 ${hour.slice(2)} 小時 ${min} 分`
     }
 
     // 每天 hh:mm（指定時分，dom/month/dow 全 *）
