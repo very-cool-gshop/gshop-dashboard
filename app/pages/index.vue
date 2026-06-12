@@ -26,7 +26,7 @@
 
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <HomeRevenueChart class="lg:col-span-2" :snapshots="snapshots" :period="period" :range="range" />
-          <HomeStatusChart :snapshots="snapshots" :period="period" :range="range" />
+          <HomeStatusChart />
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">

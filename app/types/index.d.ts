@@ -120,8 +120,7 @@ export interface DashboardSnapshot {
   orderCount: number
   newUserCount: number
   avgOrderValue: number | string
-  orderStatusDist: Record<string, number>
-  topProducts: { productId: number; productName: string; totalRevenue: number; totalQuantity: number }[]
+topProducts: { productId: number; productName: string; totalRevenue: number; totalQuantity: number }[]
   topCategories: { categoryId: number; categoryName: string; totalRevenue: number; totalQuantity: number }[]
   paymentMethods: { method: string; count: number; amount: number }[]
 }
