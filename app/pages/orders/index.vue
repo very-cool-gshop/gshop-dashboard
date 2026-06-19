@@ -91,7 +91,7 @@
       if (search.value) params[searchType.value] = search.value
 
       const result = await apiFetch<{ total: number; page: number; totalPages: number; data: Order[] }>(
-        '/orders',
+        '/orders/all',
         { params }
       )
       data.value = result.data
