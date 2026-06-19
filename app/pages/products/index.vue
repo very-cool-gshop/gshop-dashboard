@@ -6,7 +6,7 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <UButton icon="i-lucide-plus" label="新增商品" to="/products/new" />
+          <UButton icon="i-lucide-plus" label="新增商品" @click="requireWrite(() => navigateTo('/products/new'))" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -23,7 +23,7 @@
             variant="subtle"
             icon="i-lucide-trash"
             :loading="batchDeleteLoading"
-            @click="confirmBatchDelete"
+            @click="requireWrite(confirmBatchDelete)"
           >
             <template #trailing>
               <UKbd>{{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}</UKbd>
@@ -96,7 +96,7 @@
           separator: 'h-0',
           tr: 'cursor-pointer hover:bg-elevated/50',
         }"
-        @select="(_e, row) => navigateTo(`/products/${row.original.id}/edit`)"
+        @select="(_e, row) => requireWrite(() => navigateTo(`/products/${row.original.id}/edit`))"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
@@ -144,6 +144,7 @@ import type { Product } from '~/types'
     name: string
   }
 
+  const { isViewer, requireWrite } = usePermission()
   const toast = useToast()
   const table = useTemplateRef('table')
 

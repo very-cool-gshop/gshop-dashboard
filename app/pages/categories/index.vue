@@ -6,7 +6,7 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
-          <UButton icon="i-lucide-plus" label="新增類別" @click="openCreate" />
+          <UButton icon="i-lucide-plus" label="新增類別" @click="requireWrite(openCreate)" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -20,7 +20,7 @@
           variant="subtle"
           icon="i-lucide-trash"
           :loading="batchDeleteLoading"
-          @click="confirmBatchDelete"
+          @click="requireWrite(confirmBatchDelete)"
         >
           <template #trailing>
             <UKbd>{{ table?.tableApi?.getFilteredSelectedRowModel().rows.length }}</UKbd>
@@ -100,6 +100,7 @@
 
   const UCheckbox = resolveComponent('UCheckbox')
 
+  const { isViewer, requireWrite } = usePermission()
   const apiFetch = useApiFetch()
   const toast = useToast()
   const table = useTemplateRef('table')
@@ -134,7 +135,7 @@
   }
 
   function onRowSelect(_e: Event, row: TableRow<Category>) {
-    openEdit(row.original)
+    requireWrite(() => openEdit(row.original))
   }
 
   function openEdit(category: Category) {

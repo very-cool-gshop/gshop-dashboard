@@ -7,7 +7,9 @@
         </template>
 
         <template #right>
-          <CustomersAddModal />
+          <div @click.capture="(e) => { if (isViewer) { e.stopPropagation(); e.preventDefault(); requireWrite(() => {}) } }">
+            <CustomersAddModal />
+          </div>
         </template>
       </UDashboardNavbar>
     </template>
@@ -19,7 +21,7 @@
         <UInput v-model="searchInput" class="max-w-sm" icon="i-lucide-search" placeholder="搜尋姓名或信箱..." />
 
         <div class="flex flex-wrap items-center gap-1.5">
-          <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length">
+          <CustomersDeleteModal :count="table?.tableApi?.getFilteredSelectedRowModel().rows.length" @click.capture="(e: Event) => { if (isViewer) { e.stopPropagation(); e.preventDefault(); requireWrite(() => {}) } }">
             <UButton
               v-if="table?.tableApi?.getFilteredSelectedRowModel().rows.length"
               label="刪除"
@@ -102,6 +104,7 @@ import { getPaginationRowModel } from '@tanstack/table-core'
   const UBadge = resolveComponent('UBadge')
   const UCheckbox = resolveComponent('UCheckbox')
 
+  const { isViewer, requireWrite } = usePermission()
   const table = useTemplateRef('table')
 
   const detailOpen = ref(false)

@@ -49,7 +49,7 @@
           th: 'py-2 whitespace-nowrap first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
           td: 'border-b border-default'
         }"
-        @select="(_e: Event, row) => navigateTo(`/orders/${row.original.id}/edit`)"
+        @select="(_e: Event, row) => requireWrite(() => navigateTo(`/orders/${row.original.id}/edit`))"
       />
 
       <div class="flex items-center justify-between gap-3 border-t border-default pt-4 mt-auto">
@@ -70,6 +70,7 @@
 
   const UBadge = resolveComponent('UBadge')
 
+  const { requireWrite } = usePermission()
   const apiFetch = useApiFetch()
 
   const loading = ref(false)
