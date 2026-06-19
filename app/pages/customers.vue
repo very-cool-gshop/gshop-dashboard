@@ -42,7 +42,8 @@
             :items="[
               { label: '全部', value: 'all' },
               { label: '管理員', value: 'admin' },
-              { label: '客戶', value: 'customer' }
+              { label: '客戶', value: 'customer' },
+              { label: '瀏覽者', value: 'viewer' }
             ]"
             :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200' }"
             placeholder="篩選角色"
@@ -184,7 +185,8 @@ import { getPaginationRowModel } from '@tanstack/table-core'
       cell: ({ row }) => {
         const color = {
           admin: 'primary' as const,
-          customer: 'neutral' as const
+          customer: 'neutral' as const,
+          viewer: 'info' as const
         }[row.original.role]
 
         return h(UBadge, { class: 'capitalize', variant: 'subtle', color }, () => row.original.role)
